@@ -1,8 +1,86 @@
 import contextlib
+from dataclasses import dataclass
 from typing import List, Literal
 from .parser import DartClass
 
 class CodegenError(Exception): pass
+
+@dataclass
+class Expr:
+    "AST lite"
+    type: str
+    kwargs: dict
+
+    TEMPLATES = None
+
+    @staticmethod
+    def maybe_render(item):
+        # note: intentional isinstance Expr, not classmethod, so different expr subclasses are compatible
+        return item.render() if isinstance(item, Expr) else str(item)
+
+    @classmethod
+    def fac(cls, type_, **kwargs):
+        "convenience factory"
+        return cls(type=type_, kwargs=kwargs)
+
+    def render(self) -> list:
+        "returns list of tokens"
+        if self.TEMPLATES is None:
+            raise NotImplementedError('must define TEMPLATES in subclass')
+        if self.type not in self.TEMPLATES:
+            raise CodegenError(f"template not defined for type {self.type} in {type(self).__name__}")
+        template = self.TEMPLATES[self.type]
+        return flatten(template(**self.kwargs))
+
+class Token: pass
+class Nosp(Token): pass
+class Endl(Token): pass
+class Indent(Endl): pass
+class Dedent(Endl): pass
+
+def flatten(seq):
+    ret = []
+    for x in seq:
+        if isinstance(x, (list, tuple)):
+            ret.extend(flatten(x))
+        else:
+            ret.append(x)
+    return ret
+
+def ajoin(seq, delim=','):
+    "like string.join, but for an array"
+    ret = []
+    if not seq:
+        return ret
+    for i, x in enumerate(seq):
+        ret.append(x)
+        if i < len(seq) - 1:
+            if isinstance(delim, (list, tuple)):
+                ret.extend(delim)
+            else:
+                ret.append(delim)
+    return ret
+
+def flag(name, active):
+    return name if active else None
+
+class DartExpr(Expr):
+    # todo: indentation awareness for lines; some kind of 'line preference' wrapper response
+    # todo: make these decorated methods as well so they can be more complicated
+    TEMPLATES = {
+        'call': lambda name, args=(): [name, Nosp, '(', Nosp, args and Expr.maybe_render(args), Nosp, ')'],
+        'opt': lambda child: [Expr.maybe_render(child), Nosp, '?'],
+        'sig': lambda name, ret=None, args=None, factory=False: [ret, flag('factory', factory), name, Nosp, '(', Nosp, args and Expr.maybe_render(args), Nosp, ')'],
+        'list': lambda children, delim=(Nosp, ','): ajoin(children, delim),
+        'block': lambda sig, body=None: [Expr.maybe_render(sig), '{}' if body is None else ['{', Indent, Expr.maybe_render(body), Dedent, '}']],
+        'arg': lambda type, name: [type, name],
+        'member': lambda type, name: [type, name, Nosp, ';', Endl],
+        'classdec': lambda name, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else None],
+    }
+
+    def opt(self):
+        "wrap self in optional. you can use this as a static method too to wrap a string"
+        return DartExpr.fac('opt', child=self)
 
 class Indenter(list):
     "list of strings that also manages indentation"
