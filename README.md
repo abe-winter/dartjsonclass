@@ -6,13 +6,20 @@ This is a python project that takes a simple input format and outputs dart class
 
 - [x] generate dart class
 - [x] json ser/des
+- [x] some collection support
+- [ ] nullable fields
+- [ ] parse datetimes
 - [ ] generate dio interfaces
+
+Internals:
+
+- [ ] better expression builder for easier support of nested types (`Map<String, List<CustomType>>`, for example)
 
 ## design questions
 
 ### Why not use dart codegen to do this?
 
-The dart codegen tools I've used aren't as seamless as I would like and require me to write a bunch of verbose stuff.
+The dart codegen tools I've used are slow to run + require me to write fairly verbose dart.
 
 ### Why target dio?
 
@@ -20,4 +27,4 @@ all the other have problems supporting cookies / form encoding. built in http on
 
 ### Why not grpc?
 
-I'm targeting a non-grpc backend
+I'm targeting a non-grpc backend.
