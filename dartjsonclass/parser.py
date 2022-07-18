@@ -59,11 +59,23 @@ class DartType:
             children = [cls.parse(st) for st in subtypes]
         return cls(full_type=raw, template_class=base if template else None, nullable=bool(optional), children=children)
 
+    def base(self):
+        "full_type ignoring nullability"
+        return self.full_type.removesuffix('?')
+
 @dataclass
 class DartField:
     "parser / model for fields"
     dart_type: DartType
     name: str
+
+    @classmethod
+    def parse(cls, raw: str):
+        try:
+            dtype, _root_type, _template, fname = RE_FIELD.match(raw).groups()
+        except Exception as err:
+            raise ParseError(f'problem splitting field of {name}: {raw}')
+        return DartField(dart_type=DartType.parse(dtype), name=fname)
 
 @dataclass
 class DartClass:
@@ -75,11 +87,7 @@ class DartClass:
     def parse(cls, name: str, raw: dict):
         fields = []
         for i, field in enumerate(raw['fields']):
-            try:
-                dtype, _root_type, _template, fname = RE_FIELD.match(field).groups()
-            except Exception as err:
-                raise ParseError(f'problem splitting field {i} of {name}: {field}')
-            fields.append(DartField(dart_type=DartType.parse(dtype), name=fname))
+            fields.append(DartField.parse(field))
         return cls(name=name, fields=fields)
 
     @classmethod
@@ -91,3 +99,10 @@ class DartClass:
                 raise NotImplementedError('todo: special meta field')
             classes.append(cls.parse(key, val))
         return classes
+
+    def get_field(self, name: str):
+        "get field by name"
+        for field in self.fields:
+            if field.name == name:
+                return field
+        raise KeyError(name)

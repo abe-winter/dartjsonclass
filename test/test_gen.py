@@ -1,4 +1,6 @@
-from dartjsonclass.gen import DartExpr, ajoin, flatten, Nosp, Endl, Indent, Dedent
+from dartjsonclass.parser import DartClass
+from dartjsonclass.gen import DartExpr, ajoin, flatten, Nosp, Endl, Indent, Dedent, field_from_map, format
+from .test_parser import TEST_CLASS
 
 def test_flatten():
     assert flatten([1]) == [1]
@@ -17,3 +19,32 @@ def test_dart_expr():
     assert DartExpr.fac('block',
         sig=DartExpr.fac('sig', name='f'),
     ).render() == [None, None, 'f', Nosp, '(', Nosp, None, Nosp, ')', '{}']
+
+    # test opt() call as staticmethod
+    assert DartExpr.opt('hello').render() == ['hello', Nosp, '?']
+
+def ffm_helper(field: str):
+    "helper"
+    rendered = field_from_map(TEST_CLASS.get_field(field), TEST_CLASS).render()
+    return format(rendered)
+
+def test_field_from_map():
+    assert ffm_helper('str') == ['raw["str"]!']
+    assert ffm_helper('optstr') == ['raw["optstr"]']
+    assert ffm_helper('lstr') == ['raw["lstr"]!']
+    assert ffm_helper('optlstr') == ['raw["optlstr"]']
+    assert ffm_helper('listo') == ['raw["listo"].map((raw) => raw.fromMap())']
+    assert ffm_helper('mstr') == ['raw["mstr"]!']
+    print(ffm_helper('mapo'))
+    print(ffm_helper('lli'))
+    print(ffm_helper('llo'))
+    print(ffm_helper('lms'))
+    print(ffm_helper('lmo'))
+    print(ffm_helper('maplstr'))
+    print(ffm_helper('maplisto'))
+    raise NotImplementedError
+
+def test_format():
+    assert format(['x', Nosp, '(', Nosp, 'y', Nosp, ',', 'z', Nosp, ')']) == ['x(y, z)']
+    assert format(['class X {', Indent, 'x = 10;', Endl, 'return x;', Dedent, '}']) == \
+        ['class X {', '  x = 10;', '  return x;', '}']
