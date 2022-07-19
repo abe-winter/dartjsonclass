@@ -23,6 +23,13 @@ class Expr:
         "convenience factory"
         return cls(type=type_, kwargs=kwargs)
 
+    @classmethod
+    def fac2(cls, type_, *args):
+        "like fac() but infers kwargs from TEMPLATES"
+        template = cls.TEMPLATES[type_]
+        kwargs = dict(zip(template.__code__.co_varnames, args))
+        return cls.fac(type_, **kwargs)
+
     def render(self) -> list:
         "returns list of tokens"
         if self.TEMPLATES is None:
@@ -90,6 +97,11 @@ class DartExpr(Expr):
     def bang(self):
         "non-nullable access"
         return DartExpr.fac('opt', child=self, op='!')
+
+    @classmethod
+    def list(cls, children):
+        "compact helper for constructing lists"
+        return cls.fac('list', children=children)
 
 class Indenter(list):
     "list of strings that also manages indentation"
@@ -164,30 +176,11 @@ def field_from_map(field: 'DartField', cls: 'DartClass') -> DartExpr:
         return ffm_collectionify(field.dart_type, expr)
     else:
         return expr if dart_type.nullable else expr.bang()
-    # if field.dart_type.uses_extension_types():
-    #     if field.dart_type.template_class is None:
-    #         base_type = field.dart_type.full_type.removesuffix("?")
-    #         assert_known_type(base_type, cls, all_type_names)
-    #         lines.append(f'{base_type}.fromMap(raw["{field.name}"]!),')
-    #     elif field.dart_type.template_class == 'List':
-    #         base_type = field.dart_type.children[0].full_type.removesuffix("?")
-    #         assert_known_type(base_type, cls, all_type_names)
-    #         lines.append(f'raw["{field.name}"]!.map((e) => {base_type}.fromMap(e)).toList(),')
-    #     elif field.dart_type.template_class == 'Map':
-    #         if field.dart_type.children[0].full_type != 'String':
-    #             raise CodegenError(f"we support String keys, not {field.dart_type.children[0]}, at {cls.name}.{field.name}")
-    #         base_type = field.dart_type.children[1].full_type.removesuffix("?")
-    #         assert_known_type(base_type, cls, all_type_names)
-    #         lines.append(f'raw["{field.name}"]!.map((key, val) => MapEntry(key, {base_type}.fromMap(val))),')
-    #     else:
-    #         raise NotImplementedError(f'unk collection class {field.dart_type.template_class}')
-    # else:
-    #     lines.append(f'raw["{field.name}"]!,')
 
 def genclass(cls: DartClass, all_type_names = ()):
     "generate dart code for DartClass"
     lines = Indenter()
-    lines.append(f'class {cls.name} ' + '{') # yes {{ but my syntax highlighter doesn't support it
+    lines.append(f'class {cls.name} ' + '{') # yes '{{', but my syntax highlighter doesn't support it
     lines.tab(1)
     members = []
     for field in cls.fields:
@@ -197,18 +190,17 @@ def genclass(cls: DartClass, all_type_names = ()):
     members.extend(DartExpr.fac('sig', name=cls.name, args=DartExpr.fac('list', children=[f'this.{field.name}' for field in cls.fields])).render())
     members.extend((Nosp, ';', Endl))
 
-    # todo: toggle '!' everywhere depending on nullability
-    # todo: think about nesting, i.e. Map<String, List<X>> support, List<Map<String, X>>. fancier AST -> expression builder would make this easier
-
     # fromMap factory
     args = []
     for field in cls.fields:
         ...
     # lines.append(f'factory {cls.name}.fromMap(Map<String, dynamic> raw) => {cls.name}(')
-    members.extend(DartExpr.fac('arrow',
-        sig=...,
-        body=...,
-    ))
+    members.extend([
+        DartExpr.fac('arrow',
+            sig=DartExpr.fac('sig', name=f"{cls.name}.fromMap", args=DartExpr.fac('list', children=[...]), factory=True),
+            body=DartExpr.fac('list', children=[f"" for field in cls.fields]),
+        ),
+    ])
     raise NotImplementedError
 
     # toMap

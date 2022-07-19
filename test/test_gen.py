@@ -14,7 +14,8 @@ def test_ajoin():
 
 def test_dart_expr():
     assert DartExpr.fac('call', name='func', args=DartExpr.fac('list', children=['1', 2, '"three"'])).render() == \
-        ['func', Nosp, '(', Nosp, '1', Nosp, ',', 2, Nosp, ',', '"three"', Nosp, ')']
+        DartExpr.fac2('call', 'func', DartExpr.list(['1', 2, '"three"'])).render() == \
+        ['func', Nosp, '(', Nosp, '1', Nosp, ',', '2', Nosp, ',', '"three"', Nosp, ')']
     assert DartExpr.opt('String').render() == ['String', Nosp, '?']
     assert DartExpr.fac('block',
         sig=DartExpr.fac('sig', name='f'),
