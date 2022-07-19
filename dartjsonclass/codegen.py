@@ -53,18 +53,23 @@ def flatten(seq):
             ret.append(x)
     return ret
 
-def ajoin(seq, delim=','):
-    "like string.join, but for an array"
+def ajoin(seq, delim=',', final=None):
+    "like string.join, but for an array. final is the delim for after last elt"
     ret = []
     if not seq:
         return ret
     for i, x in enumerate(seq):
         ret.append(x)
-        if i < len(seq) - 1:
-            if isinstance(delim, (list, tuple)):
-                ret.extend(delim)
-            else:
-                ret.append(delim)
+        if i == len(seq) - 1:
+            idelim = final
+        else:
+            idelim = delim
+        if idelim is None:
+            continue
+        if isinstance(idelim, (list, tuple)):
+            ret.extend(idelim)
+        else:
+            ret.append(idelim)
     return ret
 
 def flag(name, active, default=None):

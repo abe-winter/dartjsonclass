@@ -1,6 +1,5 @@
-from dartjsonclass.parser import DartClass
 from dartjsonclass.codegen import ajoin, flatten, Nosp, Endl, Indent, Dedent, format
-from dartjsonclass.dartgen import DartExpr, field_from_map
+from dartjsonclass.dartgen import DartExpr, field_from_map, genclass
 from .test_parser import TEST_CLASS
 
 def test_flatten():
@@ -53,3 +52,9 @@ def test_format():
     assert format(['x', Nosp, '(', Nosp, 'y', Nosp, ',', 'z', Nosp, ')']) == ['x(y, z)']
     assert format(['class X {', Indent, 'x = 10;', Endl, 'return x;', Dedent, '}']) == \
         ['class X {', '  x = 10;', '  return x;', '}']
+
+def test_genclass():
+    expr = genclass(TEST_CLASS)
+    print(expr.render())
+    print('\n'.join(format(expr.render())))
+    raise NotImplementedError

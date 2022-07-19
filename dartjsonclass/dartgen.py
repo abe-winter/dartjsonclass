@@ -12,11 +12,14 @@ class DartExpr(Expr):
         'opt': lambda child, op='?': [Expr.maybe_render(child), Nosp, op],
         # note: name is optional for arrow functions
         'sig': lambda name=None, ret=None, args=None, factory=False: [ret, flag('factory', factory), name, Nosp, '(', Nosp, args and Expr.maybe_render(args), Nosp, ')'],
+        # comma list
         'list': lambda children, delim=(Nosp, ','): ajoin(list(map(Expr.maybe_render, children)), delim),
-        'block': lambda sig, body=None: [Expr.maybe_render(sig), '{}' if body is None else ['{', Indent, Expr.maybe_render(body), Dedent, '}']],
+        # list literal
+        'listl': lambda children: ['[', Nosp, ajoin(list(map(Expr.maybe_render, children)), (Nosp, ',')), Nosp, ']'],
+        'block': lambda sig, children: [Expr.maybe_render(sig), '{}' if not children else ['{', Indent, ajoin(list(map(Expr.maybe_render, children)), (Nosp, ';', Endl), final=(Nosp, ';')), Dedent, '}']],
         'arrow': lambda sig, body: [Expr.maybe_render(sig), '=>', Expr.maybe_render(body)],
         'arg': lambda type, name: [type, name],
-        'member': lambda type, name: [type, name, Nosp, ';', Endl],
+        'member': lambda type, name: [type, name],
         'classdec': lambda name, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else None],
         'dot': lambda obj, field, elvis=False: [Expr.maybe_render(obj), Nosp, flag('?.', elvis, '.'), Nosp, field],
     }
@@ -34,27 +37,6 @@ class DartExpr(Expr):
     def list(cls, children):
         "compact helper for constructing lists"
         return cls.fac('list', children=children)
-
-class Indenter(list):
-    "list of strings that also manages indentation"
-    def __init__(self, indent='  '):
-        super().__init__()
-        self.indent = indent
-        self.indents = 0
-
-    def tab(self, n):
-        "change the nubmer of indents stuck onto append() calls"
-        self.indents += n
-
-    @contextlib.contextmanager
-    def withtab(self, n):
-        "context manager version of self.tab(), undoes at end"
-        self.tab(n)
-        yield
-        self.tab(-n)
-
-    def append(self, x):
-        super().append(self.indent * self.indents + x)
 
 def assert_known_type(name, cls, names):
     if name not in names:
@@ -109,31 +91,40 @@ def field_from_map(field: 'DartField', cls: 'DartClass') -> DartExpr:
     else:
         return expr if dart_type.nullable else expr.bang()
 
-def genclass(cls: DartClass, all_type_names = ()):
+def genclass(cls: DartClass, all_type_names = ()) -> DartExpr:
     "generate dart code for DartClass"
-    lines = Indenter()
-    lines.append(f'class {cls.name} ' + '{') # yes '{{', but my syntax highlighter doesn't support it
-    lines.tab(1)
+    # lines.append(f'class {cls.name} ' + '{') # yes '{{', but my syntax highlighter doesn't support it
     members = []
     for field in cls.fields:
-        members.extend(DartExpr.fac('member', type=field.dart_type.full_type, name=field.name).render())
+        members.append(DartExpr.fac('member', type=field.dart_type.full_type, name=field.name))
 
     # constructor
-    members.extend(DartExpr.fac('sig', name=cls.name, args=DartExpr.fac('list', children=[f'this.{field.name}' for field in cls.fields])).render())
-    members.extend((Nosp, ';', Endl))
+    members.append(DartExpr.fac('sig', name=cls.name, args=DartExpr.fac('list', children=[f'this.{field.name}' for field in cls.fields])))
 
     # fromMap factory
-    args = []
-    for field in cls.fields:
-        ...
-    # lines.append(f'factory {cls.name}.fromMap(Map<String, dynamic> raw) => {cls.name}(')
-    members.extend([
-        DartExpr.fac('arrow',
-            sig=DartExpr.fac('sig', name=f"{cls.name}.fromMap", args=DartExpr.fac('list', children=[...]), factory=True),
-            body=DartExpr.fac('list', children=[f"" for field in cls.fields]),
-        ),
-    ])
-    raise NotImplementedError
+    members.append(DartExpr.fac('arrow',
+        sig=DartExpr.fac('sig', name=f"{cls.name}.fromMap", args=DartExpr.list(['Map<String, dynamic> raw']), factory=True),
+        body=DartExpr.fac2('call', cls.name, DartExpr.list([
+            field_from_map(field, cls)
+            for field in cls.fields
+        ])),
+    ))
+
+    members.append(DartExpr.fac('arrow',
+        sig=DartExpr.fac('sig', name=f"{cls.name}.toMap", ret='Map<String, dynamic> toMap'),
+        body=DartExpr.fac2('call', 'Map.fromEntries', DartExpr.fac2('listl', [
+            DartExpr.fac2('call', 'MapEntry', DartExpr.list([
+                f'"{field.name}"',
+                field.name,
+            ]))
+            for field in cls.fields
+        ])),
+    ))
+
+    return DartExpr.fac('block',
+        sig=DartExpr.fac2('classdec', cls.name),
+        children=members,
+    )
 
     # toMap
     lines.append('Map<String, dynamic> toMap() => Map.fromEntries([')
