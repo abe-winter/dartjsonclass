@@ -1,5 +1,6 @@
 from dartjsonclass.parser import DartClass
-from dartjsonclass.gen import DartExpr, ajoin, flatten, Nosp, Endl, Indent, Dedent, field_from_map, format
+from dartjsonclass.codegen import ajoin, flatten, Nosp, Endl, Indent, Dedent, format
+from dartjsonclass.dartgen import DartExpr, field_from_map
 from .test_parser import TEST_CLASS
 
 def test_flatten():

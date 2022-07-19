@@ -1,6 +1,6 @@
 import argparse, sys
 from .parser import DartClass
-from .gen import genclass
+from .dartgen import genclass
 
 def main():
     p = argparse.ArgumentParser()

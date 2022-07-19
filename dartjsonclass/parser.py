@@ -74,7 +74,7 @@ class DartField:
         try:
             dtype, _root_type, _template, fname = RE_FIELD.match(raw).groups()
         except Exception as err:
-            raise ParseError(f'problem splitting field of {name}: {raw}')
+            raise ParseError(f'problem splitting field {raw}')
         return DartField(dart_type=DartType.parse(dtype), name=fname)
 
 @dataclass
