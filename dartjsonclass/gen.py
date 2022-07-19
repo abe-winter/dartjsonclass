@@ -129,17 +129,30 @@ def ffm_collectionify(dart_type: 'DartType', value: DartExpr):
             return value # i.e. json value is fine
         else:
             return DartExpr.fac('call',
-                # todo: this should be elvis
-                name=DartExpr.fac('dot', obj=value, field='map'),
+                # todo: this should be elvis when nullable
+                name=DartExpr.fac('dot', obj=value, field='map', elvis=dart_type.nullable),
                 args=DartExpr.fac('list', children=[
                     DartExpr.fac('arrow',
-                        sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['raw'])),
-                        body=ffm_collectionify(dart_type.children[0], 'raw'),
+                        sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['elt'])),
+                        body=ffm_collectionify(dart_type.children[0], 'elt'),
                     )
                 ])
             )
     elif dart_type.template_class == 'Map':
-        raise NotImplementedError
+        if dart_type.children[0].full_type != 'String':
+            raise CodegenError(f'maps have to have string keys, got {dart_type.children[0].full_type}')
+        if dart_type.children[1].base() in ['String', 'Int']:
+            return value # i.e. json value is fine
+        else:
+            return DartExpr.fac('call',
+                name=DartExpr.fac('dot', obj=value, field='map', elvis=dart_type.nullable),
+                args=DartExpr.fac('list', children=[
+                    DartExpr.fac('arrow',
+                        sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['key', 'val'])),
+                        body=DartExpr.fac('call', name='MapEntry', args=DartExpr.fac('list', children=['key', ffm_collectionify(dart_type.children[1], 'val')])),
+                    )
+                ])
+            )
     else:
         raise CodegenError(f'unk collection class {dart_type.template_class}')
 

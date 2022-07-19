@@ -39,6 +39,7 @@ TEST_CLASS = DartClass.parse('Test', {'fields': [
     'List<String> lstr',
     'List<String>? optlstr',
     'List<Other> listo',
+    'List<Other>? optlisto',
     'Map<String, String> mstr',
     'Map<String, Other> mapo',
     # nested lists

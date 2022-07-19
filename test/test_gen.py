@@ -33,16 +33,19 @@ def test_field_from_map():
     assert ffm_helper('optstr') == ['raw["optstr"]']
     assert ffm_helper('lstr') == ['raw["lstr"]!']
     assert ffm_helper('optlstr') == ['raw["optlstr"]']
-    assert ffm_helper('listo') == ['raw["listo"].map((raw) => raw.fromMap())']
+    assert ffm_helper('listo') == ['raw["listo"].map((elt) => elt.fromMap())']
+    assert ffm_helper('optlisto') == ['raw["optlisto"]?.map((elt) => elt.fromMap())']
     assert ffm_helper('mstr') == ['raw["mstr"]!']
-    print(ffm_helper('mapo'))
-    print(ffm_helper('lli'))
-    print(ffm_helper('llo'))
-    print(ffm_helper('lms'))
-    print(ffm_helper('lmo'))
-    print(ffm_helper('maplstr'))
-    print(ffm_helper('maplisto'))
-    raise NotImplementedError
+    assert ffm_helper('mapo') == ['raw["mapo"].map((key, val) => MapEntry(key, val.fromMap()))']
+    # todo: 'builtins all the way down' should skip map()
+    assert ffm_helper('lli') == ['raw["lli"].map((elt) => elt)']
+    assert ffm_helper('llo') == ['raw["llo"].map((elt) => elt.map((elt) => elt.fromMap()))']
+    # todo: 'builtins all the way down' should skip map()
+    assert ffm_helper('lms') == ['raw["lms"].map((elt) => elt)']
+    assert ffm_helper('lmo') == ['raw["lmo"].map((elt) => elt.map((key, val) => MapEntry(key, val.fromMap())))']
+    # todo: 'builtins all the way down' should skip map()
+    assert ffm_helper('maplstr') == ['raw["maplstr"].map((key, val) => MapEntry(key, val))']
+    assert ffm_helper('maplisto') == ['raw["maplisto"].map((key, val) => MapEntry(key, val.map((elt) => elt.fromMap())))']
 
 def test_format():
     assert format(['x', Nosp, '(', Nosp, 'y', Nosp, ',', 'z', Nosp, ')']) == ['x(y, z)']
