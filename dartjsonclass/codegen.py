@@ -53,8 +53,12 @@ def flatten(seq):
             ret.append(x)
     return ret
 
-def ajoin(seq, delim=',', final=None):
-    "like string.join, but for an array. final is the delim for after last elt"
+def ajoin(seq, delim=',', final=None) -> list:
+    """
+    Like string.join, but returns a list with tokens stuck in.
+    Some flattening happening?
+    Final is the delim for after last elt (like ';'? why?).
+    """
     ret = []
     if not seq:
         return ret
@@ -73,6 +77,7 @@ def ajoin(seq, delim=',', final=None):
     return ret
 
 def flag(name, active, default=None):
+    # wtf is this for, past me
     return name if active else default
 
 def format(tokens: list, indent='  ') -> List[str]:

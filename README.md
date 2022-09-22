@@ -5,11 +5,13 @@ This is a python project that takes a simple input format and outputs dart class
 ## roadmap
 
 - [x] generate dart class
-- [x] json ser/des
 - [x] some collection support
+- [ ] dart base class with toJsonable
+- [ ] attrs / get / set
 - [ ] nullable fields
 - [ ] parse datetimes
-- [ ] generate dio interfaces
+- [ ] bonus: read classes from pydantic
+- [ ] bonus: generate dio interfaces
 
 Internals:
 
@@ -19,12 +21,4 @@ Internals:
 
 ### Why not use dart codegen to do this?
 
-The dart codegen tools I've used are slow to run + require me to write fairly verbose dart.
-
-### Why target dio?
-
-all the other have problems supporting cookies / form encoding. built in http only works when you're targeting the web I think? idk, this might be a me issue.
-
-### Why not grpc?
-
-I'm targeting a non-grpc backend.
+The dart codegen tools I've used have not been a good fit for my working style.
