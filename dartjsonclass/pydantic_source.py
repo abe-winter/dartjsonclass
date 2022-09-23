@@ -3,7 +3,7 @@
 import importlib.util, uuid
 from typing import _GenericAlias
 import pydantic
-from .parser import DartClass, DartField
+from .parser import DartClass, DartField, DartType
 from .dartgen import genclass
 
 def classes_in_module(path):
@@ -17,31 +17,39 @@ def classes_in_module(path):
         if isinstance(value, type) and issubclass(value, pydantic.BaseModel)
     ]
 
-def dart_type(py_type: type, nullable: bool = False) -> str:
+def dart_type(py_type: type, nullable: bool = False) -> DartType:
+    # warning: are there other Optional cases I'm not picking up? List[Optional[int]], for example
     # careful: List[int] isn't a subclass of type
-    raise NotImplementedError('todo: this needs to be some kind of type object, not a str')
-    if nullable:
-        # warning: are there other Optional cases I'm not picking up? List[Optional[int]], for example
-        return f'{dart_type(py_type)}?'
     if py_type is int:
-        return 'int'
+        return DartType('int', nullable)
     elif py_type is float:
         raise NotImplementedError('floats?')
     elif py_type in (str, uuid.UUID):
-        return 'String'
+        return DartType('String', nullable)
     elif isinstance(py_type, _GenericAlias):
         if py_type.__origin__ is list:
             assert len(py_type.__args__) == 1
-            return f'List<{dart_type(py_type.__args__[0])}>'
+            inner = dart_type(py_type.__args__[0])
+            return DartType(
+                f'List<{inner.full_type}>',
+                nullable,
+                'List',
+                [inner],
+            )
         elif py_type.__origin__ is dict:
             assert len(py_type.__args__) == 2
-            key, val = py_type.__args__
-            return f'Map<{dart_type(key)}, {dart_type(val)}>'
+            key, val = map(dart_type, py_type.__args__)
+            return DartType(
+                f'Map<{key.full_type}, {val.full_type}>',
+                nullable,
+                'Map',
+                [key, val], # is this right? or should it be val
+            )
         else:
             raise TypeError('unk collection type', py_type.__origin__)
     elif isinstance(py_type, type) and issubclass(py_type, pydantic.BaseModel):
         # assume this is a tracked type. todo: eventually complain if it's not a known type
-        return py_type.__name__
+        return DartType(py_type.__name__, nullable)
     else:
         raise NotImplementedError('unk whatever', py_type)
 

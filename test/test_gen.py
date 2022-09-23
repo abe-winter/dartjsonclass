@@ -1,4 +1,4 @@
-from dartjsonclass.codegen import ajoin, flatten, Nosp, Endl, Indent, Dedent, format
+from dartjsonclass.codegen import ajoin, flatten, Nosp, Endl, Indent, Dedent, format_exprs
 from dartjsonclass.dartgen import DartExpr, field_from_map, genclass
 from .test_parser import TEST_CLASS
 
@@ -27,7 +27,7 @@ def test_dart_expr():
 def ffm_helper(field: str):
     "helper"
     rendered = field_from_map(TEST_CLASS.get_field(field), TEST_CLASS).render()
-    return format(rendered)
+    return format_exprs(rendered)
 
 def test_field_from_map():
     assert ffm_helper('str') == ['raw["str"]!']
@@ -49,12 +49,12 @@ def test_field_from_map():
     assert ffm_helper('maplisto') == ['raw["maplisto"].map((key, val) => MapEntry(key, val.map((elt) => elt.fromMap())))']
 
 def test_format():
-    assert format(['x', Nosp, '(', Nosp, 'y', Nosp, ',', 'z', Nosp, ')']) == ['x(y, z)']
-    assert format(['class X {', Indent, 'x = 10;', Endl, 'return x;', Dedent, '}']) == \
+    assert format_exprs(['x', Nosp, '(', Nosp, 'y', Nosp, ',', 'z', Nosp, ')']) == ['x(y, z)']
+    assert format_exprs(['class X {', Indent, 'x = 10;', Endl, 'return x;', Dedent, '}']) == \
         ['class X {', '  x = 10;', '  return x;', '}']
 
 def test_genclass():
     expr = genclass(TEST_CLASS)
     print(expr.render())
-    print('\n'.join(format(expr.render())))
+    print('\n'.join(format_exprs(expr.render())))
     raise NotImplementedError

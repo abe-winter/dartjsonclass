@@ -1,6 +1,6 @@
 "dart-specific codegen"
 import contextlib
-from .parser import DartClass
+from .parser import DartClass, DartType
 from .codegen import Expr, Nosp, flag, ajoin, Indent, Dedent, CodegenError, Endl
 
 class DartExpr(Expr):
@@ -42,7 +42,7 @@ def assert_known_type(name, cls, names):
     if name not in names:
         raise CodegenError(f"{name} ref'd by {cls.name} is not in types list {names}")
 
-def ffm_collectionify(dart_type: 'DartType', value: DartExpr):
+def ffm_collectionify(dart_type: DartType, value: DartExpr):
     "helper for field_from_map, handles nesting"
     if not dart_type.template_class:
         base = dart_type.full_type.removesuffix('?')

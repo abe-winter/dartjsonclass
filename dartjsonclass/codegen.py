@@ -80,7 +80,7 @@ def flag(name, active, default=None):
     # wtf is this for, past me
     return name if active else default
 
-def format(tokens: list, indent='  ') -> List[str]:
+def format_exprs(tokens: list, indent='  ') -> List[str]:
     "format list of tokens to a list of lines"
     byline = [[]]
     for tok in tokens:

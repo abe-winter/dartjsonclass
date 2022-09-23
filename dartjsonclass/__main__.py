@@ -1,6 +1,7 @@
 import argparse, sys
 from .parser import DartClass
 from .dartgen import genclass
+from .codegen import format_exprs
 from .pydantic_source import classes_in_module, pydantic_to_dart
 
 def main():
@@ -29,9 +30,9 @@ def main():
     dart_classes = []
     for cls in by_name.values():
         dart_classes.append(pydantic_to_dart(cls))
-    for cls in dart_classes:
-        print(genclass(cls))
-        raise NotImplementedError('todo: format it probably')
+    gen_cls = list(map(genclass, dart_classes))
+    for exprs in gen_cls:
+        print('\n'.join(format_exprs(exprs.render())))
 
 if __name__ == '__main__':
     main()
