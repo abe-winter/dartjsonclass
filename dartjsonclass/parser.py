@@ -41,14 +41,14 @@ class DartType:
     nullable: bool = False
     template_class: Optional[str] = None
     children: List['DartType'] = dataclasses.field(default_factory=list)
+    is_ext: bool = False
 
     def __str__(self):
         return self.full_type
 
     def uses_extension_types(self) -> bool:
-        "if true, this requires extra processing to translate json. if false, uses builtin types"
-        return (self.template_class is None and self.full_type.removesuffix('?') not in DART_LITERALS.__args__) or \
-            any(str(child) not in DART_LITERALS.__args__ for child in self.children)
+        # todo: get rid of this, just ref is_ext everywhere
+        return self.is_ext
 
     @classmethod
     def parse(cls, raw: str):

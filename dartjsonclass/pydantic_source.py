@@ -20,36 +20,40 @@ def classes_in_module(path):
 def dart_type(py_type: type, nullable: bool = False) -> DartType:
     # warning: are there other Optional cases I'm not picking up? List[Optional[int]], for example
     # careful: List[int] isn't a subclass of type
+    null_tail = '?' if nullable else ''
     if py_type is int:
-        return DartType('int', nullable)
+        return DartType('int' + null_tail, nullable)
     elif py_type is float:
         raise NotImplementedError('floats?')
     elif py_type in (str, uuid.UUID):
-        return DartType('String', nullable)
+        return DartType('String' + null_tail, nullable)
     elif isinstance(py_type, _GenericAlias):
         if py_type.__origin__ is list:
             assert len(py_type.__args__) == 1
             inner = dart_type(py_type.__args__[0])
             return DartType(
-                f'List<{inner.full_type}>',
+                f'List<{inner.full_type}>{null_tail}',
                 nullable,
                 'List',
                 [inner],
+                is_ext=inner.is_ext,
             )
         elif py_type.__origin__ is dict:
             assert len(py_type.__args__) == 2
             key, val = map(dart_type, py_type.__args__)
+            assert key.full_type == 'String'
             return DartType(
-                f'Map<{key.full_type}, {val.full_type}>',
+                f'Map<{key.full_type}, {val.full_type}>{null_tail}',
                 nullable,
                 'Map',
                 [key, val], # is this right? or should it be val
+                is_ext=val.is_ext,
             )
         else:
             raise TypeError('unk collection type', py_type.__origin__)
     elif isinstance(py_type, type) and issubclass(py_type, pydantic.BaseModel):
         # assume this is a tracked type. todo: eventually complain if it's not a known type
-        return DartType(py_type.__name__, nullable)
+        return DartType(py_type.__name__ + null_tail, nullable, is_ext=True)
     else:
         raise NotImplementedError('unk whatever', py_type)
 

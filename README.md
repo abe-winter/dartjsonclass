@@ -6,19 +6,17 @@ This is a python project that takes a simple input format and outputs dart class
 
 - [x] generate dart class
 - [x] some collection support
-- [ ] dart base class with toJsonable
-- [ ] attrs / get / set
-- [ ] nullable fields
+- [ ] dart JsonBase with json conversion
+- [ ] fieldNames / getAttr / setAttr
+- [ ] operator=, copy, copyWith, hash
+- nullable fields
+  - [x] literals
+  - [ ] non-literals
+- [ ] nested collections like `Map<String, List<Item>>`
 - [ ] parse datetimes
-- [ ] bonus: read classes from pydantic
+- [x] bonus: read classes from pydantic
 - [ ] bonus: generate dio interfaces
 
 Internals:
 
 - [ ] better expression builder for easier support of nested types (`Map<String, List<CustomType>>`, for example)
-
-## design questions
-
-### Why not use dart codegen to do this?
-
-The dart codegen tools I've used have not been a good fit for my working style.

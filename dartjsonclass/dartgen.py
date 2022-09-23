@@ -20,7 +20,7 @@ class DartExpr(Expr):
         'arrow': lambda sig, body: [Expr.maybe_render(sig), '=>', Expr.maybe_render(body)],
         'arg': lambda type, name: [type, name],
         'member': lambda type, name: [type, name],
-        'classdec': lambda name, ext=None, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else ['extends', Expr.maybe_render(ext)] if ext else None],
+        'classdec': lambda name, ext=None, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else None, ['extends', Expr.maybe_render(ext)] if ext else None],
         'dot': lambda obj, field, elvis=False: [Expr.maybe_render(obj), Nosp, flag('?.', elvis, '.'), Nosp, field],
     }
 
@@ -42,16 +42,19 @@ def assert_known_type(name, cls, names):
     if name not in names:
         raise CodegenError(f"{name} ref'd by {cls.name} is not in types list {names}")
 
+DART_LITERALS = ['String', 'int']
+
 def ffm_collectionify(dart_type: DartType, value: DartExpr):
     "helper for field_from_map, handles nesting"
     if not dart_type.template_class:
         base = dart_type.full_type.removesuffix('?')
-        assert base not in ['String', 'Int'] # shouldn't get here
-        return DartExpr.fac('call',
-            name=DartExpr.fac('dot', obj=value, field='fromMap'),
+        assert base not in DART_LITERALS # shouldn't get here
+        return DartExpr.fac2('call',
+            f'{dart_type.full_type}.fromMap',
+            DartExpr.fac2('list', [value]),
         )
     if dart_type.template_class == 'List':
-        if dart_type.children[0].base() in ['String', 'Int']:
+        if dart_type.children[0].base() in DART_LITERALS:
             return value # i.e. json value is fine
         else:
             return DartExpr.fac('call',
@@ -67,7 +70,7 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
     elif dart_type.template_class == 'Map':
         if dart_type.children[0].full_type != 'String':
             raise CodegenError(f'maps have to have string keys, got {dart_type.children[0].full_type}')
-        if dart_type.children[1].base() in ['String', 'Int']:
+        if dart_type.children[1].base() in DART_LITERALS:
             return value # i.e. json value is fine
         else:
             return DartExpr.fac('call',
@@ -107,6 +110,13 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> Dart
         body=DartExpr.fac2('call', cls.name, DartExpr.list([
             field_from_map(field, cls)
             for field in cls.fields
+        ])),
+    ))
+
+    members.append(DartExpr.fac('arrow',
+        sig=DartExpr.fac('sig', name=f"{cls.name}.fromJson", args=DartExpr.list(['String raw']), factory=True),
+        body=DartExpr.fac2('call', f"{cls.name}.fromMap", DartExpr.list([
+            DartExpr.fac2('call', 'jsonDecode', DartExpr.list(['raw'])),
         ])),
     ))
 
