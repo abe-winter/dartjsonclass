@@ -20,7 +20,7 @@ class DartExpr(Expr):
         'arrow': lambda sig, body: [Expr.maybe_render(sig), '=>', Expr.maybe_render(body)],
         'arg': lambda type, name: [type, name],
         'member': lambda type, name: [type, name],
-        'classdec': lambda name, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else None],
+        'classdec': lambda name, ext=None, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else ['extends', Expr.maybe_render(ext)] if ext else None],
         'dot': lambda obj, field, elvis=False: [Expr.maybe_render(obj), Nosp, flag('?.', elvis, '.'), Nosp, field],
     }
 
@@ -91,7 +91,7 @@ def field_from_map(field: 'DartField', cls: 'DartClass') -> DartExpr:
     else:
         return expr if dart_type.nullable else expr.bang()
 
-def genclass(cls: DartClass, all_type_names = ()) -> DartExpr:
+def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> DartExpr:
     "generate dart code for DartClass"
     # lines.append(f'class {cls.name} ' + '{') # yes '{{', but my syntax highlighter doesn't support it
     members = []
@@ -110,8 +110,9 @@ def genclass(cls: DartClass, all_type_names = ()) -> DartExpr:
         ])),
     ))
 
+    # toMap function
     members.append(DartExpr.fac('arrow',
-        sig=DartExpr.fac('sig', name=f"{cls.name}.toMap", ret='Map<String, dynamic> toMap'),
+        sig=DartExpr.fac('sig', name="toMap", ret='Map<String, dynamic>'),
         body=DartExpr.fac2('call', 'Map.fromEntries', DartExpr.fac2('listl', [
             DartExpr.fac2('call', 'MapEntry', DartExpr.list([
                 f'"{field.name}"',
@@ -122,7 +123,7 @@ def genclass(cls: DartClass, all_type_names = ()) -> DartExpr:
     ))
 
     return DartExpr.fac('block',
-        sig=DartExpr.fac2('classdec', cls.name),
+        sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
         children=members,
     )
 
