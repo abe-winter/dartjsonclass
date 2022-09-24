@@ -1,6 +1,6 @@
 "dart-specific codegen"
 import contextlib
-from .parser import DartClass, DartType
+from .parser import DartClass, DartType, DartField
 from .codegen import Expr, Nosp, flag, ajoin, Indent, Dedent, CodegenError, Endl
 
 class DartExpr(Expr):
@@ -57,16 +57,19 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
         if dart_type.children[0].base() in DART_LITERALS:
             return value # i.e. json value is fine
         else:
-            return DartExpr.fac('call',
-                # todo: this should be elvis when nullable
-                name=DartExpr.fac('dot', obj=value, field='map', elvis=dart_type.nullable),
-                args=DartExpr.fac('list', children=[
-                    DartExpr.fac('arrow',
-                        sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['elt'])),
-                        body=ffm_collectionify(dart_type.children[0], 'elt'),
-                    )
-                ])
-            )
+            return DartExpr.fac2('call', DartExpr.fac2('dot',
+                DartExpr.fac('call',
+                    # no idea why template specialization is necessary here -- map() seems to respect return type of predicate
+                    name=DartExpr.fac('dot', obj=value, field=f'map<{dart_type.children[0].full_type}>', elvis=dart_type.nullable),
+                    args=DartExpr.fac('list', children=[
+                        DartExpr.fac('arrow',
+                            sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['elt'])),
+                            body=ffm_collectionify(dart_type.children[0], 'elt'),
+                        )
+                    ])
+                ),
+                'toList',
+            ))
     elif dart_type.template_class == 'Map':
         if dart_type.children[0].full_type != 'String':
             raise CodegenError(f'maps have to have string keys, got {dart_type.children[0].full_type}')
@@ -74,18 +77,18 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
             return value # i.e. json value is fine
         else:
             return DartExpr.fac('call',
-                name=DartExpr.fac('dot', obj=value, field='map', elvis=dart_type.nullable),
+                name=DartExpr.fac('dot', obj=value, field=f'map<String, {dart_type.children[1].full_type}>', elvis=dart_type.nullable),
                 args=DartExpr.fac('list', children=[
                     DartExpr.fac('arrow',
                         sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['key', 'val'])),
-                        body=DartExpr.fac('call', name='MapEntry', args=DartExpr.fac('list', children=['key', ffm_collectionify(dart_type.children[1], 'val')])),
+                        body=DartExpr.fac('call', name='MapEntry', args=DartExpr.fac('list', children=['key as String', ffm_collectionify(dart_type.children[1], 'val')])),
                     )
                 ])
             )
     else:
         raise CodegenError(f'unk collection class {dart_type.template_class}')
 
-def field_from_map(field: 'DartField', cls: 'DartClass') -> DartExpr:
+def field_from_map(field: DartField, cls: DartClass) -> DartExpr:
     "generate fromMap expr for a field"
     dart_type = field.dart_type
     expr = DartExpr.fac('call', name='raw', args=DartExpr.fac('list', children=[f'"{field.name}"']), scope='[]')
@@ -93,6 +96,39 @@ def field_from_map(field: 'DartField', cls: 'DartClass') -> DartExpr:
         return ffm_collectionify(field.dart_type, expr)
     else:
         return expr if dart_type.nullable else expr.bang()
+
+def field_tomap(field: DartField) -> DartExpr:
+    "toMap expr for a field"
+    # todo: test nullable cases here and in fromMap, including nested
+    if (tmpclass := field.dart_type.template_class):
+        if tmpclass == 'List':
+            return DartExpr.fac2('call', DartExpr.fac2('dot',
+                DartExpr.fac2('call',
+                    DartExpr.fac2('dot', field.name, 'map'),
+                    DartExpr.fac2('arrow',
+                        '(e)',
+                        field_tomap(DartField(name='e', dart_type=field.dart_type.children[0])),
+                    )
+                ),
+                'toList',
+            ))
+        elif tmpclass == 'Map':
+            return DartExpr.fac2('call',
+                DartExpr.fac2('dot', field.name, 'map'),
+                DartExpr.list([DartExpr.fac2('arrow',
+                    '(key, value)',
+                    DartExpr.fac2('call', 'MapEntry', DartExpr.list([
+                        'key',
+                        field_tomap(DartField(name='value', dart_type=field.dart_type.children[1]))
+                    ]))
+                )]),
+            )
+        else:
+            raise NotImplementedError('unhandled template class', tmpclass)
+    elif field.dart_type.is_ext:
+        return DartExpr.fac2('call', DartExpr.fac2('dot', field.name, 'toMap'))
+    else:
+        return field.name
 
 def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> DartExpr:
     "generate dart code for DartClass"
@@ -126,7 +162,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> Dart
         body=DartExpr.fac2('call', 'Map.fromEntries', DartExpr.fac2('listl', [
             DartExpr.fac2('call', 'MapEntry', DartExpr.list([
                 f'"{field.name}"',
-                field.name,
+                field_tomap(field)
             ]))
             for field in cls.fields
         ])),
@@ -136,24 +172,3 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> Dart
         sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
         children=members,
     )
-
-    # toMap
-    lines.append('Map<String, dynamic> toMap() => Map.fromEntries([')
-    with lines.withtab(1):
-        for field in cls.fields:
-            if field.dart_type.uses_extension_types():
-                if field.dart_type.template_class is None:
-                    lines.append(f'MapEntry("{field.name}", {field.name}.toMap()),')
-                elif field.dart_type.template_class == 'List':
-                    lines.append(f'MapEntry("{field.name}", {field.name}.map((e) => e.toMap()).toList()),')
-                elif field.dart_type.template_class == 'Map':
-                    lines.append(f'MapEntry("{field.name}", {field.name}.map((key, val) => MapEntry(key, val.toMap())),')
-                else:
-                    raise NotImplementedError(f'unk collection class {field.dart_type.template_class}')
-            else:
-                lines.append(f'MapEntry("{field.name}", {field.name}),')
-    lines.append(']);')
-
-    lines.tab(-1)
-    lines.append('}\n')
-    return '\n'.join(lines)

@@ -18,8 +18,8 @@ void main() {
     {"x": Item(3, "three")},
     {"y": Item(4, "four")},
   );
+  print(msg.toMap());
   print("toMap roundtrip:");
-  throw UnimplementedError("todo: this will crash because toMap doesn't handle nesting in dartgen.py");
   print(Msg.fromMap(msg.toMap()));
   print("toJson:");
   print(msg.toJson());
