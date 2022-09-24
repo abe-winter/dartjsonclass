@@ -13,7 +13,7 @@ This is a python project that takes a simple input format and outputs dart class
 - [x] pydantic-to-dart
 - [x] some collection support
 - [x] fromMap / toMap, fromJson / toJson
-- [ ] basic metaprogramming: fieldNames / getAttr / setAttr
+- [x] basic metaprogramming: fieldNames / getAttr / setAttr
 - [ ] operator=, copy, copyWith, hash
 - nullable fields
   - [x] literals
@@ -21,4 +21,4 @@ This is a python project that takes a simple input format and outputs dart class
 - [ ] nested collections like `Map<String, List<Item>>` (may be working, needs tests)
 - [ ] plugin system for types and error-handling
 - [ ] ISO datetimes plugin
-- [ ] bonus: generate dio CRUD interfaces
+- [ ] fromDioRequest factory

@@ -8,7 +8,13 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('paths', help="list of .py or .dart files to process", nargs='+')
     p.add_argument('-o', '--output', default='-', help="destination file (default stdout)")
+    p.add_argument('--no-ser', action='store_true', help="omit json / map methods")
+    p.add_argument('--no-meta', action='store_true', help="omit fields list + get/set methods")
+    p.add_argument('--no-data', action='store_true', help="omit dataclass methods (copy, equal)")
     args = p.parse_args()
+
+    if args.no_ser:
+        raise NotImplementedError("we don't know how to omit json methods")
 
     classes = {}
     for path in args.paths:
@@ -32,7 +38,10 @@ def main():
     dart_classes = []
     for cls in by_name.values():
         dart_classes.append(pydantic_to_dart(cls))
-    gen_cls = list(map(genclass, dart_classes))
+    gen_cls = [
+        genclass(cls, meta=not args.no_meta, data=not args.no_data)
+        for cls in dart_classes
+    ]
     for exprs in gen_cls:
         # todo: python source file + line
         outfile.write('\n'.join(format_exprs(exprs.render())))

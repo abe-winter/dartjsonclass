@@ -1,27 +1,51 @@
 "dart-specific codegen"
 import contextlib
+from typing import Callable
 from .parser import DartClass, DartType, DartField
-from .codegen import Expr, Nosp, flag, ajoin, Indent, Dedent, CodegenError, Endl
+from .codegen import Expr, Nosp, Nosemi, flag, ajoin, Indent, Dedent, CodegenError, Endl
 
 class DartExpr(Expr):
     # todo: indentation awareness for lines; some kind of 'line preference' wrapper response
     # todo: make these decorated methods as well so they can be more complicated
+    # todo: why are these calling maybe_render? top-level render should walk the tree
     TEMPLATES = {
-        'call': lambda name, args=(), scope='()': [Expr.maybe_render(name), Nosp, scope[0], Nosp, args and Expr.maybe_render(args), Nosp, scope[1]],
+        'call': lambda name, args=(), scope='()': [
+            Expr.maybe_render(name), Nosp, scope[0], Nosp, args and Expr.maybe_render(args), Nosp, scope[1]
+        ],
         # opt is actually any unary suffix
         'opt': lambda child, op='?': [Expr.maybe_render(child), Nosp, op],
         # note: name is optional for arrow functions
-        'sig': lambda name=None, ret=None, args=None, factory=False: [ret, flag('factory', factory), name, Nosp, '(', Nosp, args and Expr.maybe_render(args), Nosp, ')'],
+        'sig': lambda name=None, ret=None, args=None, factory=False: [
+            ret, flag('factory', factory), name, Nosp, '(', Nosp, args and Expr.maybe_render(args), Nosp, ')'
+        ],
         # comma list
-        'list': lambda children, delim=(Nosp, ','): ajoin(list(map(Expr.maybe_render, children)), delim),
+        'list': lambda children, delim=(Nosp, ','): ajoin(map(Expr.maybe_render, children), delim),
         # list literal
-        'listl': lambda children: ['[', Nosp, ajoin(list(map(Expr.maybe_render, children)), (Nosp, ',')), Nosp, ']'],
-        'block': lambda sig, children: [Expr.maybe_render(sig), '{}' if not children else ['{', Indent, ajoin(list(map(Expr.maybe_render, children)), (Nosp, ';', Endl), final=(Nosp, ';')), Dedent, '}']],
+        'listl': lambda children: ['[', Nosp, ajoin(map(Expr.maybe_render, children), (Nosp, ',')), Nosp, ']'],
+        'block': lambda sig, children, delim=(Nosp, ';'), endl=(Endl,), nosemi=None: [
+            Expr.maybe_render(sig), '{}' if not children else [
+                '{', Indent, ajoin(map(Expr.maybe_render, children), delim + endl, final=delim), Dedent, '}', nosemi,
+            ]
+        ],
         'arrow': lambda sig, body: [Expr.maybe_render(sig), '=>', Expr.maybe_render(body)],
+        # list argument I guess? this is a subset of member, right?
         'arg': lambda type, name: [type, name],
-        'member': lambda type, name: [type, name],
-        'classdec': lambda name, ext=None, imp=None: ['class', name, ['implements', Expr.maybe_render(imp)] if imp else None, ['extends', Expr.maybe_render(ext)] if ext else None],
+        'member': lambda type, name, init=None: [type, name, '=' if init else None, init and Expr.maybe_render(init)],
+        'classdec': lambda name, ext=None, imp=None: [
+            'class', name,
+            ['implements', Expr.maybe_render(imp)] if imp else None,
+            ['extends', Expr.maybe_render(ext)] if ext else None,
+        ],
         'dot': lambda obj, field, elvis=False: [Expr.maybe_render(obj), Nosp, flag('?.', elvis, '.'), Nosp, field],
+        'case': lambda cond, stmts, nobreak=False: [
+            'case' if cond else 'default', cond and Expr.maybe_render(cond), Nosp, ':', Indent,
+            ajoin(map(Expr.maybe_render, stmts), (Nosp, ';', Endl), final=(Nosp, ';')),
+            [Endl, 'break;'] if not nobreak else None,
+            Dedent,
+        ],
+        # for return, await
+        'kw': lambda kw, val: [kw, Expr.maybe_render(val)],
+        'assign': lambda left, right: [left, '=', right],
     }
 
     # todo: replace both of these with fac-like wrap() on base class? hmm, 'child' is not standard though
@@ -130,7 +154,7 @@ def field_tomap(field: DartField) -> DartExpr:
     else:
         return field.name
 
-def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> DartExpr:
+def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: bool = True, data: bool = True) -> DartExpr:
     "generate dart code for DartClass"
     # lines.append(f'class {cls.name} ' + '{') # yes '{{', but my syntax highlighter doesn't support it
     members = []
@@ -168,7 +192,46 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True) -> Dart
         ])),
     ))
 
+    if meta:
+        members.append(DartExpr.fac2('member', 'static List<String>', 'djc__fields', DartExpr.fac2('listl', [
+            f'"{field.name}"' for field in cls.fields
+        ])))
+        members.append(getattr_setattr(
+            cls,
+            DartExpr.fac('sig', name='getAttr', args=DartExpr.list(['String name'])),
+            lambda field: DartExpr.fac2('kw', 'return', field.name),
+            True,
+        ))
+        members.append(getattr_setattr(
+            cls,
+            DartExpr.fac('sig', name='setAttr', ret='void', args=DartExpr.list(['String name', 'dynamic val'])),
+            lambda field: DartExpr.fac2('assign', field.name, 'val'),
+            False,
+        ))
+
+    if data:
+        pass # raise NotImplementedError('todo data methods')
+
     return DartExpr.fac('block',
         sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
         children=members,
+    )
+
+def getattr_setattr(cls: DartClass, sig: DartExpr, stmt: Callable[[DartField], DartExpr], nobreak=True):
+    "common wrapper for getAttr / setAttr type switch functions"
+    return DartExpr.fac('block',
+        # note: this intentionally doesn't return dynamic -- I want the language to infer e.g. String return if all members are Strings
+        sig=sig,
+        children=[
+            DartExpr.fac2('block', DartExpr.fac2('call', 'switch', DartExpr.list(['name'])), [
+                DartExpr.fac2('case', f'"{field.name}"', [stmt(field)], nobreak)
+                for field in cls.fields
+            ] + [
+                # default case
+                DartExpr.fac2('case', None, [
+                    DartExpr.fac2('kw', 'throw', DartExpr.fac2('call', 'ArgumentError', '"Unknown field ${name}"'))
+                ], True),
+            ], (), (), Nosemi),
+        ],
+        nosemi=Nosemi,
     )

@@ -25,4 +25,8 @@ void main() {
   print(msg.toJson());
   print("json roundtrip:");
   print(Msg.fromJson(msg.toJson()).toMap());
+  print('getattr before ${msg.getAttr("maybe")}');
+  msg.setAttr('maybe', 5);
+  print('getattr after ${msg.getAttr("maybe")}');
+  print('fields ${Msg.djc__fields.length} ${Msg.djc__fields}');
 }
