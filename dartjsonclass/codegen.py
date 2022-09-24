@@ -17,6 +17,7 @@ class Expr:
     @staticmethod
     def maybe_render(item):
         # note: intentional isinstance Expr, not classmethod, so different expr subclasses are compatible
+        # todo: I think this needs to walk sublists / exprs in list case
         return item.render() if isinstance(item, Expr) else str(item)
 
     @classmethod
@@ -40,6 +41,7 @@ class Expr:
 
 class Token: pass
 class Nosp(Token): pass
+class Nosemi(Token): pass
 class Endl(Token): pass
 class Indent(Endl): pass
 class Dedent(Endl): pass
@@ -70,13 +72,12 @@ def ajoin(seq, delim=',', final=None) -> list:
     ret = []
     if not seq:
         return ret
-    first = True
+    next_delim = None
     for x in seq:
-        if first:
-            first = False
-        elif delim is not None:
+        if next_delim is not None:
             extapend(ret, delim)
         ret.append(x)
+        next_delim = delim
     if final is not None:
         extapend(ret, final)
     return ret
@@ -110,5 +111,8 @@ def format_exprs(tokens: list, indent='  ') -> List[str]:
                 line.append(tok)
             else:
                 line.extend((tok, ' '))
+        while Nosemi in line:
+            index = line.index(Nosemi)
+            line[index:index + 2] = []
         lines.append(''.join(line))
     return lines

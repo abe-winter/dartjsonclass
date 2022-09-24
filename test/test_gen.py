@@ -1,3 +1,4 @@
+import pytest
 from dartjsonclass.codegen import ajoin, flatten, Nosp, Endl, Indent, Dedent, format_exprs
 from dartjsonclass.dartgen import DartExpr, field_from_map, genclass
 from .test_parser import TEST_CLASS
@@ -57,4 +58,12 @@ def test_genclass():
     expr = genclass(TEST_CLASS)
     print(expr.render())
     print('\n'.join(format_exprs(expr.render())))
+    raise NotImplementedError
+
+def test_gen_case():
+    assert format_exprs(DartExpr.fac2('case', 'true', ['x += 1', 'x *= 3']).render()) \
+        == ['case true :', '  x += 1;', '  x *= 3;', '  break;', '']
+
+@pytest.mark.skip
+def test_nosemi():
     raise NotImplementedError
