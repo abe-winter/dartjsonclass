@@ -53,6 +53,14 @@ def flatten(seq):
             ret.append(x)
     return ret
 
+def extapend(arr: list, delim) -> list:
+    "extend or append arr with delim. if delim is list or tuple, arr gets extended. helper for ajoin."
+    if isinstance(delim, (list, tuple)):
+        arr.extend(delim)
+    else:
+        arr.append(delim)
+    return arr
+
 def ajoin(seq, delim=',', final=None) -> list:
     """
     Like string.join, but returns a list with tokens stuck in.
@@ -62,18 +70,15 @@ def ajoin(seq, delim=',', final=None) -> list:
     ret = []
     if not seq:
         return ret
-    for i, x in enumerate(seq):
+    first = True
+    for x in seq:
+        if first:
+            first = False
+        elif delim is not None:
+            extapend(ret, delim)
         ret.append(x)
-        if i == len(seq) - 1:
-            idelim = final
-        else:
-            idelim = delim
-        if idelim is None:
-            continue
-        if isinstance(idelim, (list, tuple)):
-            ret.extend(idelim)
-        else:
-            ret.append(idelim)
+    if final is not None:
+        extapend(ret, final)
     return ret
 
 def flag(name, active, default=None):
