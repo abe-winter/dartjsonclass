@@ -10,6 +10,9 @@ void main() {
   print("json roundtrip:");
   print(Item.fromJson(item.toJson()).toMap());
 
+  print('dataclass ==');
+  print('yes ${item == item}, yes ${item == Item(1, "one")}, no ${item == Item(1, "two")}');
+
   final msg = Msg(
     "12345",
     null,

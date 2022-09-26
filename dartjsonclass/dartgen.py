@@ -8,6 +8,7 @@ class DartExpr(Expr):
     # todo: indentation awareness for lines; some kind of 'line preference' wrapper response
     # todo: make these decorated methods as well so they can be more complicated
     # todo: why are these calling maybe_render? top-level render should walk the tree
+    # todo: metaclass / subclass hook to make x_{exprname} classmethods
     TEMPLATES = {
         'call': lambda name, args=(), scope='()': [
             Expr.maybe_render(name), Nosp, scope[0], Nosp, args and Expr.maybe_render(args), Nosp, scope[1]
@@ -46,6 +47,7 @@ class DartExpr(Expr):
         # for return, await
         'kw': lambda kw, val: [kw, Expr.maybe_render(val)],
         'assign': lambda left, right: [left, '=', right],
+        'bin': lambda left, op, right: [left, op, right],
     }
 
     # todo: replace both of these with fac-like wrap() on base class? hmm, 'child' is not standard though
@@ -210,7 +212,24 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         ))
 
     if data:
-        pass # raise NotImplementedError('todo data methods')
+        members.append(DartExpr.fac('block',
+            # note this isn't Object by choice, dart doesn't want to give you this
+            sig=DartExpr.fac2('sig', 'operator ==', 'bool', DartExpr.list([f'Object other'])),
+            children=[
+                f'if (other is! {cls.name}) return false',
+                f'var x = other as {cls.name}',
+                # todo: collection customizations
+                DartExpr.fac2('kw', 'return', DartExpr.fac2('list', [
+                    DartExpr.fac2('bin', field.name, '==', f'x.{field.name}')
+                    for field in cls.fields
+                ], ('&&',))),
+            ],
+            nosemi=Nosemi,
+        ))
+        # todo: hashCode
+        # todo: copy
+        # todo: copyWith
+        # todo: whatever makes sorting possible
 
     return DartExpr.fac('block',
         sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
