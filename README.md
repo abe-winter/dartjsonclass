@@ -14,7 +14,8 @@ This is a python project that takes a simple input format and outputs dart class
 - [x] some collection support
 - [x] fromMap / toMap, fromJson / toJson
 - [x] basic metaprogramming: fieldNames / getAttr / setAttr
-- [ ] operator=, copy, copyWith, hash
+- [x] operator ==, copy, hash
+  - [ ] operator == for collections
 - nullable fields
   - [x] literals
   - [ ] non-literals

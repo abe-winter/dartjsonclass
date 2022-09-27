@@ -234,7 +234,12 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
                 field.name for field in cls.fields
             ))
         ))
-        # todo: copy
+        members.append(DartExpr.fac('arrow',
+            sig=f'{cls.name} copy()',
+            body=DartExpr.fac2('call', cls.name, DartExpr.list(
+                field.name for field in cls.fields
+            ))
+        ))
         # todo: copyWith
         # todo: whatever makes sorting possible
 

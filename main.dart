@@ -8,7 +8,10 @@ void main() {
   print("toJson:");
   print(item.toJson());
   print("json roundtrip:");
-  print(Item.fromJson(item.toJson()).toMap());
+  final itemRound = Item.fromJson(item.toJson());
+  print(itemRound.toMap());
+  assert(item == item.copy());
+  assert(item == itemRound);
 
   print('dataclass ==');
   print('yes ${item == item}, yes ${item == Item(1, "one")}, no ${item == Item(1, "two")}');
