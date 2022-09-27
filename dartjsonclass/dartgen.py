@@ -48,6 +48,7 @@ class DartExpr(Expr):
         'kw': lambda kw, val: [kw, Expr.maybe_render(val)],
         'assign': lambda left, right: [left, '=', right],
         'bin': lambda left, op, right: [left, op, right],
+        'decorate': lambda decorator, expr: ['@', Nosp, Expr.maybe_render(decorator), Endl, Expr.maybe_render(expr)],
     }
 
     # todo: replace both of these with fac-like wrap() on base class? hmm, 'child' is not standard though
@@ -214,7 +215,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
     if data:
         members.append(DartExpr.fac('block',
             # note this isn't Object by choice, dart doesn't want to give you this
-            sig=DartExpr.fac2('sig', 'operator ==', 'bool', DartExpr.list([f'Object other'])),
+            sig=DartExpr.fac2('decorate', 'override', DartExpr.fac2('sig', 'operator ==', 'bool', DartExpr.list([f'Object other']))),
             children=[
                 f'if (other is! {cls.name}) return false',
                 f'var x = other as {cls.name}',
@@ -226,7 +227,13 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
             ],
             nosemi=Nosemi,
         ))
-        # todo: hashCode
+        assert len(cls.fields) > 0 # body below is wrong otherwise
+        members.append(DartExpr.fac('arrow',
+            sig=DartExpr.fac2('decorate', 'override', 'int get hashCode'),
+            body=f'{cls.fields[0].name}.hashCode' if len(cls.fields) == 1 else DartExpr.fac2('call', 'Object.hash', DartExpr.list(
+                field.name for field in cls.fields
+            ))
+        ))
         # todo: copy
         # todo: copyWith
         # todo: whatever makes sorting possible

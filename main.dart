@@ -27,9 +27,13 @@ void main() {
   print("toJson:");
   print(msg.toJson());
   print("json roundtrip:");
-  print(Msg.fromJson(msg.toJson()).toMap());
+  final roundTrip = Msg.fromJson(msg.toJson());
+  print(roundTrip.toMap());
+  print('= roundtrip: ${msg == roundTrip}');
+  assert(msg == roundTrip);
   print('getattr before ${msg.getAttr("maybe")}');
   msg.setAttr('maybe', 5);
   print('getattr after ${msg.getAttr("maybe")}');
   print('fields ${Msg.djc__fields.length} ${Msg.djc__fields}');
+  print('hashCode ${msg.hashCode}');
 }
