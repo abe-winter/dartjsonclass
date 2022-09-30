@@ -1,4 +1,5 @@
 import argparse, sys
+import pydantic
 from .parser import DartClass
 from .dartgen import genclass
 from .codegen import format_exprs
@@ -31,11 +32,16 @@ def main():
     outfile.write("import 'dart:convert';\n")
     outfile.write('\n')
     by_name = {}
+    prev = {}
     for path, path_classes in classes.items():
         for cls in path_classes:
-            if cls.__name__ in by_name:
-                raise KeyError(f'duplicate {cls.__name__} in {path}')
+            if isinstance(cls, type) and issubclass(cls, pydantic.BaseSettings):
+                continue
+            if cls.__name__ in by_name and by_name[cls.__name__] is not cls:
+                raise KeyError(f'duplicate {cls.__name__} in {path} (previous {prev[cls.__name__]})')
             by_name[cls.__name__] = cls
+            prev[cls.__name__] = path
+    del prev
     dart_classes = []
     for cls in by_name.values():
         dart_classes.append(pydantic_to_dart(cls))

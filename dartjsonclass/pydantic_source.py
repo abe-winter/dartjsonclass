@@ -1,31 +1,46 @@
 "use pydantic classes as a source"
 
-import importlib.util, uuid
-from typing import _GenericAlias
+import importlib.util, uuid, os, enum, warnings
+from typing import _GenericAlias, Literal, Union
+from datetime import datetime
 import pydantic
 from .parser import DartClass, DartField, DartType
 from .dartgen import genclass
 
+def path_to_module(path: str) -> str:
+    "convert path to dotted module; probably brittle"
+    # there must be an easier way to do this
+    assert not os.path.isabs(path)
+    return path.removesuffix('.py').replace('/', '.')
+
 def classes_in_module(path):
     "return list of BaseModel subclasses in module"
-    spec = importlib.util.spec_from_file_location('djmodule', 'example.py')
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    mod = importlib.import_module(path_to_module(path))
     return [
         value
         for _key, value in mod.__dict__.items()
         if isinstance(value, type) and issubclass(value, pydantic.BaseModel)
     ]
 
+def safe_subclass(cls, parent):
+    "safe issubclass wrapper"
+    return isinstance(cls, type) and issubclass(cls, parent)
+
 def dart_type(py_type: type, nullable: bool = False) -> DartType:
     # warning: are there other Optional cases I'm not picking up? List[Optional[int]], for example
     # careful: List[int] isn't a subclass of type
+    # todo: (t: Literal['u'] = 'u') thinks it's optional but isn't. is the default confusing it?
     null_tail = '?' if nullable else ''
-    if py_type is int:
+    if py_type is int or safe_subclass(py_type, pydantic.types.ConstrainedInt):
         return DartType('int' + null_tail, nullable)
     elif py_type is float:
-        raise NotImplementedError('floats?')
-    elif py_type in (str, uuid.UUID):
+        return DartType('double' + null_tail, nullable)
+    elif py_type in (str, uuid.UUID) or safe_subclass(py_type, pydantic.types.ConstrainedStr):
+        return DartType('String' + null_tail, nullable)
+    elif py_type is bool:
+        return DartType('bool' + null_tail, nullable)
+    elif py_type is datetime:
+        # todo: actually parse date from ISO
         return DartType('String' + null_tail, nullable)
     elif isinstance(py_type, _GenericAlias):
         if py_type.__origin__ is list:
@@ -49,11 +64,28 @@ def dart_type(py_type: type, nullable: bool = False) -> DartType:
                 [key, val], # is this right? or should it be val
                 is_ext=val.is_ext,
             )
+        elif py_type.__origin__ is Literal:
+            # todo: maybe enum here
+            return DartType('String' + null_tail, nullable)
+        elif py_type.__origin__ is Union:
+            # warning: this won't always be right. also todo, provide a way to parse the union
+            return DartType('Map<String, dynamic>' + null_tail, nullable)
         else:
-            raise TypeError('unk collection type', py_type.__origin__)
+            raise TypeError('unk collection type', py_type, type(py_type), py_type.__origin__)
     elif isinstance(py_type, type) and issubclass(py_type, pydantic.BaseModel):
         # assume this is a tracked type. todo: eventually complain if it's not a known type
         return DartType(py_type.__name__ + null_tail, nullable, is_ext=True)
+    elif isinstance(py_type, type) and issubclass(py_type, enum.Enum):
+        # todo: register this globally so we know to generate an enum for it, then ref the type
+        return DartType('String' + null_tail, nullable)
+    elif py_type is list:
+        # todo: include source class in warning
+        warnings.warn('bare list, using List but this is probably bad')
+        return DartType('List' + null_tail, nullable)
+    elif py_type is dict:
+        # todo: include source class in warning
+        warnings.warn('bare dict, ideally type this')
+        return DartType('Map<String, dynamic>' + null_tail, nullable)
     else:
         raise NotImplementedError('unk whatever', py_type)
 

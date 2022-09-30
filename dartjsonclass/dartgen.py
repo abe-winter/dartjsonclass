@@ -227,7 +227,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
             ],
             nosemi=Nosemi,
         ))
-        assert len(cls.fields) > 0 # body below is wrong otherwise
+        assert len(cls.fields) > 0, f"empty class {cls.name}" # body below is wrong otherwise
         members.append(DartExpr.fac('arrow',
             sig=DartExpr.fac2('decorate', 'override', 'int get hashCode'),
             body=f'{cls.fields[0].name}.hashCode' if len(cls.fields) == 1 else DartExpr.fac2('call', 'Object.hash', DartExpr.list(
