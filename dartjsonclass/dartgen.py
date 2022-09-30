@@ -23,6 +23,7 @@ class DartExpr(Expr):
         'list': lambda children, delim=(Nosp, ','): ajoin(map(Expr.maybe_render, children), delim),
         # list literal
         'listl': lambda children: ['[', Nosp, ajoin(map(Expr.maybe_render, children), (Nosp, ',')), Nosp, ']'],
+        # pass nosemi=Nosemi for no semi at end
         'block': lambda sig, children, delim=(Nosp, ';'), endl=(Endl,), nosemi=None: [
             Expr.maybe_render(sig), '{}' if not children else [
                 '{', Indent, ajoin(map(Expr.maybe_render, children), delim + endl, final=delim), Dedent, '}', nosemi,
@@ -39,10 +40,10 @@ class DartExpr(Expr):
         ],
         'dot': lambda obj, field, elvis=False: [Expr.maybe_render(obj), Nosp, flag('?.', elvis, '.'), Nosp, field],
         'case': lambda cond, stmts, nobreak=False: [
-            'case' if cond else 'default', cond and Expr.maybe_render(cond), Nosp, ':', Indent,
+            'case' if cond else 'default', cond and Expr.maybe_render(cond), Nosp, ':', Indent if len(stmts) + int(not nobreak) > 1 else None,
             ajoin(map(Expr.maybe_render, stmts), (Nosp, ';', Endl), final=(Nosp, ';')),
             [Endl, 'break;'] if not nobreak else None,
-            Dedent,
+            Dedent if len(stmts) + int(not nobreak) > 1 else Endl,
         ],
         # for return, await
         'kw': lambda kw, val: [kw, Expr.maybe_render(val)],

@@ -1,5 +1,5 @@
 "misc reusable codegen stuff"
-import contextlib
+import contextlib, itertools
 from dataclasses import dataclass
 from typing import List, Literal
 from .parser import DartClass, DartType
@@ -88,6 +88,12 @@ def flag(name, active, default=None):
 
 def format_exprs(tokens: list, indent='  ') -> List[str]:
     "format list of tokens to a list of lines"
+    endl_dedents = [i for i, pair in enumerate(itertools.pairwise(tokens)) if pair == (Endl, Dedent)]
+    if endl_dedents:
+        # coalesce dedents
+        for i, index in enumerate(endl_dedents):
+            index -= i # because we are removing things
+            tokens[index:index + 2] = (Dedent,)
     byline = [[]]
     for tok in tokens:
         if tok in (Indent, Dedent, Endl):
@@ -98,8 +104,11 @@ def format_exprs(tokens: list, indent='  ') -> List[str]:
     nindent = 0
     for linetok in byline:
         line = []
+        # filter None here bc (tok, None, Nosp) breaks Nosp detection
+        linetok = list(filter(lambda x: x is not None, linetok))
         for i, tok in enumerate(linetok):
-            if tok in (Nosp, None, ''):
+            # todo: get rid of '', but set up tests first
+            if tok in (Nosp, ''):
                 continue
             elif tok in (Endl, Indent, Dedent):
                 if tok is Indent:
@@ -111,6 +120,7 @@ def format_exprs(tokens: list, indent='  ') -> List[str]:
                 line.append(tok)
             else:
                 line.extend((tok, ' '))
+        # todo: make these 'adjacent pair' rules linear + faster
         while Nosemi in line:
             index = line.index(Nosemi)
             line[index:index + 2] = []
