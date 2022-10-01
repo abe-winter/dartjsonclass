@@ -127,12 +127,12 @@ def field_from_map(field: DartField, cls: DartClass) -> DartExpr:
 
 def field_tomap(field: DartField) -> DartExpr:
     "toMap expr for a field"
-    # todo: test nullable cases here and in fromMap, including nested
+    null_tail = '?' if field.dart_type.nullable else ''
     if (tmpclass := field.dart_type.template_class):
         if tmpclass == 'List':
             return DartExpr.fac2('call', DartExpr.fac2('dot',
                 DartExpr.fac2('call',
-                    DartExpr.fac2('dot', field.name, 'map'),
+                    DartExpr.fac2('dot', field.name + null_tail, 'map'),
                     DartExpr.fac2('arrow',
                         '(e)',
                         field_tomap(DartField(name='e', dart_type=field.dart_type.children[0])),
@@ -142,7 +142,7 @@ def field_tomap(field: DartField) -> DartExpr:
             ))
         elif tmpclass == 'Map':
             return DartExpr.fac2('call',
-                DartExpr.fac2('dot', field.name, 'map'),
+                DartExpr.fac2('dot', field.name + null_tail, 'map'),
                 DartExpr.list([DartExpr.fac2('arrow',
                     '(key, value)',
                     DartExpr.fac2('call', 'MapEntry', DartExpr.list([
@@ -154,7 +154,6 @@ def field_tomap(field: DartField) -> DartExpr:
         else:
             raise NotImplementedError('unhandled template class', tmpclass)
     elif field.dart_type.is_ext:
-        null_tail = '?' if field.dart_type.nullable else ''
         return DartExpr.fac2('call', DartExpr.fac2('dot', field.name + null_tail, 'toMap'))
     else:
         return field.name
@@ -220,6 +219,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
             sig=DartExpr.fac2('decorate', 'override', DartExpr.fac2('sig', 'operator ==', 'bool', DartExpr.list([f'Object other']))),
             children=[
                 f'if (other is! {cls.name}) return false',
+                # todo: 'other as {cls}' is necessary in raw dart (I think), linted as superfluous in flutter. find out why and make this optional
                 f'var x = other as {cls.name}',
                 # todo: collection customizations
                 DartExpr.fac2('kw', 'return', DartExpr.fac2('list', [

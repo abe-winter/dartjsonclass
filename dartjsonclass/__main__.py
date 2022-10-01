@@ -69,7 +69,7 @@ def main():
             fname = mod_out_path(args.output, mod)
             print('writing', fname)
             with open(fname, 'w') as outfile:
-                write_preamble(outfile, local_imports(cls for cls, _ in pairs))
+                write_preamble(outfile, local_imports(mod, (cls for cls, _ in pairs)))
                 for _, exprs in pairs:
                     outfile.write('\n'.join(format_exprs(exprs.render())))
                     outfile.write('\n\n')
@@ -81,12 +81,13 @@ def main():
             outfile.write('\n'.join(format_exprs(exprs.render())))
             outfile.write('\n\n')
 
-def local_imports(classes: Sequence[pydantic.BaseModel]) -> List[str]:
+def local_imports(current_module: str, classes: Sequence[pydantic.BaseModel]) -> List[str]:
     "return list of local import statements using dep_classes() to find dependencies"
     deps = {
         depcls.__module__
         for cls in classes
         for depcls in dep_classes(cls)
+        if depcls.__module__ != current_module
     }
     return [
         f"import './{mod_out_path('', dep)}';"

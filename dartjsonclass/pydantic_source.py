@@ -94,7 +94,8 @@ def pydantic_to_dart(cls: pydantic.BaseModel):
     assert issubclass(cls, pydantic.BaseModel)
     return DartClass(name=cls.__name__, fields=[
         # outer_type_ is List[int], type_ will be int. ugh this cost me 30 minutes.
-        DartField(dart_type(field.outer_type_, not field.required), field.name)
+        # note: use .allow_none, *not* .required. required will be false for non-nullable fields with a default or defalut_factory set.
+        DartField(dart_type(field.outer_type_, field.allow_none), field.name)
         for field in cls.__fields__.values()
     ])
 
