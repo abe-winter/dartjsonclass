@@ -50,6 +50,12 @@ class DartType:
         # todo: get rid of this, just ref is_ext everywhere
         return self.is_ext
 
+    def null_tail(self) -> str:
+        return '?' if self.nullable else ''
+
+    def bang_tail(self) -> str:
+        return '!' if self.nullable else ''
+
     @classmethod
     def parse(cls, raw: str):
         base, template, optional = RE_TEMPLATE.match(raw).groups()

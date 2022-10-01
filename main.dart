@@ -47,4 +47,6 @@ void main() {
   print('getattr after ${msg.getAttr("maybe")}');
   print('fields ${Msg.djc__fields.length} ${Msg.djc__fields}');
   print('hashCode ${msg.hashCode}');
+
+  // todo: deep copy tests. make sure collections, collection items, and JsonBase attrs are equal but not same instance
 }

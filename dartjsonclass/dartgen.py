@@ -117,8 +117,8 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
     else:
         raise CodegenError(f'unk collection class {dart_type.template_class}')
 
-def from_map_null_wrap(dart_type: DartType, expr: DartExpr, value: DartExpr):
-    "fromMap wrapper for nullable fields with subparser"
+def arg_null_wrap(dart_type: DartType, expr: DartExpr, value: DartExpr):
+    "turns f(x) with nullable x into: x != null ? f(x) : null"
     if dart_type.nullable:
         return DartExpr.fac2('ternary', DartExpr.fac2('bin', value, '!=', 'null'), expr)
     else:
@@ -129,7 +129,7 @@ def field_from_map(field: DartField, cls: DartClass) -> DartExpr:
     dart_type = field.dart_type
     expr = DartExpr.fac('call', name='raw', args=DartExpr.fac('list', children=[f'"{field.name}"']), scope='[]')
     if dart_type.uses_extension_types() or dart_type.template_class in ('List', 'Map'):
-        return from_map_null_wrap(dart_type, ffm_collectionify(field.dart_type, expr), expr)
+        return arg_null_wrap(dart_type, ffm_collectionify(field.dart_type, expr), expr)
     else:
         return expr if dart_type.nullable else expr.bang()
 
@@ -250,17 +250,28 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         ))
         members.append(DartExpr.fac('arrow',
             sig=DartExpr.fac2('decorate', 'override', f'{cls.name} copy()'),
-            body=DartExpr.fac2('call', cls.name, DartExpr.list(
-                field.name for field in cls.fields
-            ))
+            body=DartExpr.fac2('call', cls.name, DartExpr.list(map(copy_field, cls.fields))),
         ))
         # todo: copyWith
-        # todo: whatever makes sorting possible
+        # todo: whatever makes stable sorting
 
     return DartExpr.fac('block',
         sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
         children=members,
     )
+
+def copy_field(field: DartField) -> DartExpr:
+    "field initializer for deep copy"
+    # warning: more aggressive deep copy; recurse this on child type
+    dart_type = field.dart_type
+    if field.dart_type.template_class == 'Map':
+        return arg_null_wrap(dart_type, DartExpr.fac2('listl', [DartExpr.fac2('kw', '...', f'{field.name}{dart_type.bang_tail()}', Nosp)], '{}'), field.name)
+    elif dart_type.template_class == 'List':
+        return arg_null_wrap(dart_type, DartExpr.fac2('listl', [DartExpr.fac2('kw', '...', f'{field.name}{dart_type.bang_tail()}', Nosp)]), field.name)
+    elif dart_type.uses_extension_types():
+        return f'{field.name + dart_type.null_tail()}.copy()'
+    else:
+        return field.name
 
 def getattr_setattr(cls: DartClass, sig: DartExpr, stmt: Callable[[DartField], DartExpr], nobreak=True):
     "common wrapper for getAttr / setAttr type switch functions"
