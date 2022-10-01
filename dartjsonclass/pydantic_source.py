@@ -97,3 +97,17 @@ def pydantic_to_dart(cls: pydantic.BaseModel):
         DartField(dart_type(field.outer_type_, not field.required), field.name)
         for field in cls.__fields__.values()
     ])
+
+def dep_classes(cls: pydantic.BaseModel, seen: set = None):
+    "list of classes that are dependencies of this one"
+    # todo: high pri for test coverage
+    seen = seen if seen is not None else set()
+    ret = []
+    for field in cls.__fields__.values():
+        if safe_subclass(field.type_, pydantic.BaseModel):
+            if field.type_ in seen:
+                continue
+            ret.append(field.type_)
+            seen.add(field.type_)
+            ret.extend(dep_classes(field.type_, seen))
+    return ret
