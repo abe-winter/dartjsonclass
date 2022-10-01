@@ -19,9 +19,10 @@ abstract class JsonBase<T> {
   T copy();
 }
 
-bool listEqual<T>(List<T> a, List<T> b, {bool Function(T?, T?)? pred}) {
+bool listEqual<T>(List<T>? a, List<T>? b, {bool Function(T?, T?)? pred}) {
   // this exists in flutter:collection, and seemingly *used to* exist in dart?
   // https://api.flutter.dev/flutter/dart.pkg.collection.equality/dart.pkg.collection.equality-library.html
+  if (a == null || b == null) return a == b;
   if (a.length != b.length) return false;
   for (int i = 0; i < a.length; i++) {
     if (pred != null) {
@@ -31,7 +32,8 @@ bool listEqual<T>(List<T> a, List<T> b, {bool Function(T?, T?)? pred}) {
   return true;
 }
 
-bool mapEqual<T>(Map<String, T> a, Map<String, T> b, {bool Function(T?, T?)? pred}) {
+bool mapEqual<T>(Map<String, T>? a, Map<String, T>? b, {bool Function(T?, T?)? pred}) {
+  if (a == null || b == null) return a == b;
   if (a.length != b.length) return false;
   for (final key in a.keys) {
     if (pred != null) {

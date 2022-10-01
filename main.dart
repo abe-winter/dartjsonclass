@@ -21,6 +21,9 @@ void main() {
   print('strlist json roundtrip: ${StrList.fromJson(strlist.toJson()).toMap()}');
   assert(strlist == StrList.fromJson(strlist.toJson()));
 
+  NullItem.fromMap({'item': null});
+  NullItem.fromMap({});
+
   final msg = Msg(
     "12345",
     null,

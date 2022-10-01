@@ -47,9 +47,10 @@ class DartExpr(Expr):
         ],
         # for return, await, spread
         'kw': lambda kw, val, sep=None: [kw, sep, Expr.maybe_render(val)],
-        'assign': lambda left, right: [left, '=', right],
-        'bin': lambda left, op, right: [left, op, right],
+        'assign': lambda left, right: [Expr.maybe_render(left), '=', Expr.maybe_render(right)],
+        'bin': lambda left, op, right: [Expr.maybe_render(left), op, Expr.maybe_render(right)],
         'decorate': lambda decorator, expr: ['@', Nosp, Expr.maybe_render(decorator), Endl, Expr.maybe_render(expr)],
+        'ternary': lambda cond, ifyes, ifno='null': ['(', Nosp, Expr.maybe_render(cond), Nosp, ')', '?', Expr.maybe_render(ifyes), ':', Expr.maybe_render(ifno)],
     }
 
     # todo: replace both of these with fac-like wrap() on base class? hmm, 'child' is not standard though
@@ -78,7 +79,7 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
         base = dart_type.full_type.removesuffix('?')
         assert base not in DART_LITERALS # shouldn't get here
         return DartExpr.fac2('call',
-            f'{dart_type.full_type}.fromMap',
+            f'{base}.fromMap',
             DartExpr.fac2('list', [value]),
         )
     if dart_type.template_class == 'List':
@@ -88,7 +89,7 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
             return DartExpr.fac2('call', DartExpr.fac2('dot',
                 DartExpr.fac('call',
                     # no idea why template specialization is necessary here -- map() seems to respect return type of predicate
-                    name=DartExpr.fac('dot', obj=value, field=f'map<{dart_type.children[0].full_type}>', elvis=dart_type.nullable),
+                    name=DartExpr.fac('dot', obj=value, field=f'map<{dart_type.children[0].full_type.removesuffix("?")}>', elvis=dart_type.nullable),
                     args=DartExpr.fac('list', children=[
                         DartExpr.fac('arrow',
                             sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['elt'])),
@@ -105,7 +106,7 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
             return DartExpr.fac2('listl', [DartExpr.fac2('kw', '...', value, Nosp)], '{}')
         else:
             return DartExpr.fac('call',
-                name=DartExpr.fac('dot', obj=value, field=f'map<String, {dart_type.children[1].full_type}>', elvis=dart_type.nullable),
+                name=DartExpr.fac('dot', obj=value, field=f'map<String, {dart_type.children[1].full_type.removesuffix("?")}>', elvis=dart_type.nullable),
                 args=DartExpr.fac('list', children=[
                     DartExpr.fac('arrow',
                         sig=DartExpr.fac('sig', args=DartExpr.fac('list', children=['key', 'val'])),
@@ -116,12 +117,19 @@ def ffm_collectionify(dart_type: DartType, value: DartExpr):
     else:
         raise CodegenError(f'unk collection class {dart_type.template_class}')
 
+def from_map_null_wrap(dart_type: DartType, expr: DartExpr, value: DartExpr):
+    "fromMap wrapper for nullable fields with subparser"
+    if dart_type.nullable:
+        return DartExpr.fac2('ternary', DartExpr.fac2('bin', value, '!=', 'null'), expr)
+    else:
+        return expr
+
 def field_from_map(field: DartField, cls: DartClass) -> DartExpr:
     "generate fromMap expr for a field"
     dart_type = field.dart_type
     expr = DartExpr.fac('call', name='raw', args=DartExpr.fac('list', children=[f'"{field.name}"']), scope='[]')
     if dart_type.uses_extension_types() or dart_type.template_class in ('List', 'Map'):
-        return ffm_collectionify(field.dart_type, expr)
+        return from_map_null_wrap(dart_type, ffm_collectionify(field.dart_type, expr), expr)
     else:
         return expr if dart_type.nullable else expr.bang()
 

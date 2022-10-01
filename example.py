@@ -18,3 +18,6 @@ class Msg(pydantic.BaseModel):
 class StrList(pydantic.BaseModel):
     strlist: List[str]
     strmap: Dict[str, str]
+
+class NullItem(pydantic.BaseModel):
+    item: Optional[Item]
