@@ -5,9 +5,10 @@ This is a python project that generates dart classes from pydantic classes.
 The dart classes which we output:
 - convert to and from json or `Map`
 - have `operator ==` and `copy`
+- have basic metaprogramming features (getAttr / setAttr / fields list)
 - mostly-working nesting
 
-Play with it by running `make e2e` in the repo. This runs the tool on `example.dart` and runs a (very simple) suite of dart tests to exercise capabilities.
+Play with it by running `make e2e` in the repo. This runs the tool on `example.py` and runs a (very simple) suite of dart tests to exercise capabilities.
 
 ## installation
 
@@ -35,6 +36,7 @@ Even then, you should post a github issue with your use case so we can talk abou
   - [x] literals
   - [ ] non-literals (mostly working, needs comprehensive tests)
 - [ ] nested collections like `Map<String, List<Item>>` (may be working, needs tests)
+- [ ] tests passing, coverage, CI
 
 ### nice-to-haves
 
