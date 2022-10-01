@@ -19,6 +19,7 @@ void main() {
   final strlist = StrList(["a", "b"], {"x": "y"});
   print('strlist map roundtrip: ${StrList.fromMap(strlist.toMap()).toMap()}');
   print('strlist json roundtrip: ${StrList.fromJson(strlist.toJson()).toMap()}');
+  assert(strlist == StrList.fromJson(strlist.toJson()));
 
   final msg = Msg(
     "12345",

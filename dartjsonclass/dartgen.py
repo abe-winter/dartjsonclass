@@ -158,6 +158,14 @@ def field_tomap(field: DartField) -> DartExpr:
     else:
         return field.name
 
+def field_equal(field: DartField) -> DartExpr:
+    "generate equality test for field"
+    # warning: nested collections, like List<Map>, List<List>, Map<String, List>, you get it, need to pass pred and will be always false for now
+    if (tmpclass := field.dart_type.template_class) in ('Map', 'List'):
+        return DartExpr.fac2('call', f'{tmpclass.lower()}Equal', DartExpr.list([field.name, f'x.{field.name}']))
+    else:
+        return DartExpr.fac2('bin', field.name, '==', f'x.{field.name}')
+
 def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: bool = True, data: bool = True) -> DartExpr:
     "generate dart code for DartClass"
     members = []
@@ -221,10 +229,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
                 # todo: 'other as {cls}' is necessary in raw dart (I think), linted as superfluous in flutter. find out why and make this optional
                 f'var x = other as {cls.name}',
                 # todo: collection customizations
-                DartExpr.fac2('kw', 'return', DartExpr.fac2('list', [
-                    DartExpr.fac2('bin', field.name, '==', f'x.{field.name}')
-                    for field in cls.fields
-                ], ('&&',))),
+                DartExpr.fac2('kw', 'return', DartExpr.fac2('list', map(field_equal, cls.fields), ('&&',))),
             ],
             nosemi=Nosemi,
         ))
