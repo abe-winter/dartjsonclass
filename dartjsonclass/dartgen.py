@@ -154,7 +154,8 @@ def field_tomap(field: DartField) -> DartExpr:
         else:
             raise NotImplementedError('unhandled template class', tmpclass)
     elif field.dart_type.is_ext:
-        return DartExpr.fac2('call', DartExpr.fac2('dot', field.name, 'toMap'))
+        null_tail = '?' if field.dart_type.nullable else ''
+        return DartExpr.fac2('call', DartExpr.fac2('dot', field.name + null_tail, 'toMap'))
     else:
         return field.name
 
