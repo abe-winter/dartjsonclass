@@ -1,7 +1,8 @@
+// from dartjsonclass (package version)
 import 'dart:convert';
 
 /// base class for json messages
-abstract class JsonBase {
+abstract class JsonBase<T> {
   Map<String, dynamic> toMap();
 
   String toJson() => jsonEncode(toMap());
@@ -14,6 +15,5 @@ abstract class JsonBase {
   dynamic getAttr(String name);
   void setAttr(String name, dynamic val);
 
-  // sigh: is there no way to give a base class a method returning type of descendant?
-  // T copy();
+  T copy();
 }

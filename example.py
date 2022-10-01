@@ -14,3 +14,7 @@ class Msg(pydantic.BaseModel):
     item_list: List[Item]
     item_dict: Dict[str, Item]
     id_dict: Dict[uuid.UUID, Item]
+
+class StrList(pydantic.BaseModel):
+    strlist: List[str]
+    strmap: Dict[str, str]

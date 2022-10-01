@@ -16,6 +16,10 @@ void main() {
   print('dataclass ==');
   print('yes ${item == item}, yes ${item == Item(1, "one")}, no ${item == Item(1, "two")}');
 
+  final strlist = StrList(["a", "b"], {"x": "y"});
+  print('strlist map roundtrip: ${StrList.fromMap(strlist.toMap()).toMap()}');
+  print('strlist json roundtrip: ${StrList.fromJson(strlist.toJson()).toMap()}');
+
   final msg = Msg(
     "12345",
     null,
