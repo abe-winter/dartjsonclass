@@ -3,3 +3,6 @@
 __pycache__/
 *.swp
 example.dart
+.dart_tool/
+.packages
+pubspec.lock

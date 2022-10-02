@@ -1,4 +1,4 @@
-import './example.dart';
+import './lib/example.dart';
 
 void main() {
   final item = Item(1, "one");

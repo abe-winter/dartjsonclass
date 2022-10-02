@@ -10,6 +10,8 @@ The dart classes which we output:
 
 Play with it by running `make e2e` in the repo. This runs the tool on `example.py` and runs a (very simple) suite of dart tests to exercise capabilities.
 
+Also run `make dart-test` to run a more comprehensive suite of dart tests on the generated classes.
+
 ## installation
 
 (pip with git+)
