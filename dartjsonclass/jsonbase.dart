@@ -19,6 +19,11 @@ abstract class JsonBase<T> {
   T copy();
 }
 
+int hashcodeList(List? list) => list == null ? list.hashCode : Object.hashAll(list);
+
+// sigh yes Object.hashAll(map.entries) seems to not work
+int hashcodeMap(Map? map) => map == null ? map.hashCode : Object.hash(Object.hashAll(map.keys), Object.hashAll(map.values));
+
 bool listEqual<T>(List<T>? a, List<T>? b, {bool Function(T?, T?)? pred}) {
   // this exists in flutter:collection, and seemingly *used to* exist in dart?
   // https://api.flutter.dev/flutter/dart.pkg.collection.equality/dart.pkg.collection.equality-library.html

@@ -244,8 +244,8 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         assert len(cls.fields) > 0, f"empty class {cls.name}" # body below is wrong otherwise
         members.append(DartExpr.fac('arrow',
             sig=DartExpr.fac2('decorate', 'override', 'int get hashCode'),
-            body=f'{cls.fields[0].name}.hashCode' if len(cls.fields) == 1 else DartExpr.fac2('call', 'Object.hash', DartExpr.list(
-                field.name for field in cls.fields
+            body=hash_field(cls.fields[0], True) if len(cls.fields) == 1 else DartExpr.fac2('call', 'Object.hash', DartExpr.list(
+                map(hash_field, cls.fields),
             ))
         ))
         members.append(DartExpr.fac('arrow',
@@ -259,6 +259,13 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
         children=members,
     )
+
+def hash_field(field: DartField, solitary: bool = False) -> DartExpr:
+    "solitary means this class has 1 field and .hashCode is necessary for non-collections"
+    return f'hashcodeList({field.name})' if field.dart_type.template_class == 'List' else \
+        f'hashcodeMap({field.name})' if field.dart_type.template_class == 'Map' else \
+        f'{field.name}.hashCode' if solitary else \
+        field.name
 
 def copy_field(field: DartField) -> DartExpr:
     "field initializer for deep copy"

@@ -13,20 +13,13 @@ void commonTests<T extends JsonBase>(fromMap, fromJson, List<String> fields, T t
   test('roundtrip_equal', () {
     expect(t, mapRoundtrip(fromMap, t));
     expect(t, jsonRoundtrip(fromJson, t));
-    expect(t.hashCode, jsonRoundtrip(fromJson, t).hashCode);
+    expect(t.hashCode, jsonRoundtrip(fromJson, t).hashCode, reason: "hashCode");
   });
 
   test('copy_equal', () {
     expect(t, t.copy());
     expect(t.copy(), jsonRoundtrip(fromJson, t));
-    expect(t.hashCode, t.copy().hashCode);
-  });
-
-  test('copy_hashcodes', () {
-    final copy = t.copy();
-    for (final field in fields) {
-      expect(copy.getAttr(field).hashCode, t.getAttr(field).hashCode, reason: field);
-    }
+    expect(t.hashCode, t.copy().hashCode, reason: "hashCode");
   });
 }
 
