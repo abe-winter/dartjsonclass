@@ -52,6 +52,7 @@ def main():
         for cls in dart_classes
     ]
     if args.mods:
+        # mods means create separate dart files per separate python files
         # todo: factor this out pls
         by_mod = collections.defaultdict(list)
         for cls, exprs in zip(by_name.values(), gen_cls):
@@ -64,8 +65,8 @@ def main():
             os.makedirs(args.output)
         shutil.copy(os.path.join(os.path.dirname(__file__), 'jsonbase.dart'), args.output)
         for mod, pairs in by_mod.items():
-            # sorting so subsequent runs produce consistent diffs; ideally sort by line number in orig source file
-            pairs.sort(key=lambda pair: pair[0].__name__)
+            # sorting so subsequent runs produce consistent diffs
+            pairs.sort(key=lambda pair: pair[0].__code__.__co_firstlineno__)
             fname = mod_out_path(args.output, mod)
             print('writing', fname)
             with open(fname, 'w') as outfile:
