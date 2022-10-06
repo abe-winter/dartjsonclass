@@ -1,10 +1,19 @@
 "misc reusable codegen stuff"
-import contextlib, itertools
+import contextlib, itertools, functools
 from dataclasses import dataclass
 from typing import List, Literal
 from .parser import DartClass, DartType
 
 class CodegenError(Exception): pass
+
+def expr_fac(cls, name, fn):
+    "function factory for expr"
+    fn.__name__ = f'x_{name}'
+    @functools.wraps(fn)
+    def expr_fn(*args, **kwargs):
+        full_kwargs = {**dict(zip(fn.__code__.co_varnames, args)), **kwargs}
+        return cls(type=name, kwargs=full_kwargs)
+    return expr_fn
 
 @dataclass
 class Expr:
@@ -13,6 +22,17 @@ class Expr:
     kwargs: dict
 
     TEMPLATES = {}
+
+    def __init_subclass__(cls, **kwargs):
+        "creates classmethods from TEMPLATES for shortcuts, and in the hope that some code inference tools will find them"
+        super.__init_subclass__(**kwargs)
+        # todo: it seems like jedi is trying to get runtime type mutations? debug this
+        # https://github.com/davidhalter/jedi/issues/1347 dynamic class methods
+        # https://github.com/davidhalter/jedi/issues/1458 use annotations
+        # https://github.com/davidhalter/jedi/pull/1461 PR to use annotations
+        # todo: clear error here for all expr names which are not valid identifiers
+        for name, fn in cls.TEMPLATES.items():
+            setattr(cls, f'x_{name}', staticmethod(expr_fac(cls, name, fn)))
 
     @staticmethod
     def maybe_render(item):

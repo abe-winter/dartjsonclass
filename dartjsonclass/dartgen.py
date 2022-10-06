@@ -7,8 +7,6 @@ from .codegen import Expr, Nosp, Nosemi, flag, ajoin, Indent, Dedent, CodegenErr
 class DartExpr(Expr):
     # todo: indentation awareness for lines; some kind of 'line preference' wrapper response
     # todo: make these decorated methods as well so they can be more complicated
-    # todo: why are these calling maybe_render? top-level render should walk the tree
-    # todo: metaclass / subclass hook to make x_{exprname} classmethods
     TEMPLATES = {
         'call': lambda name, args=(), scope='()': [
             Expr.maybe_render(name), Nosp, scope[0], Nosp, args and Expr.maybe_render(args), Nosp, scope[1]
@@ -30,7 +28,7 @@ class DartExpr(Expr):
             ]
         ],
         'arrow': lambda sig, body: [Expr.maybe_render(sig), '=>', Expr.maybe_render(body)],
-        # list argument I guess? this is a subset of member, right?
+        # arguments list argument
         'arg': lambda type, name: [type, name],
         'member': lambda type, name, init=None: [type, name, '=' if init else None, init and Expr.maybe_render(init)],
         'classdec': lambda name, ext=None, imp=None: [
@@ -242,7 +240,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
             nosemi=Nosemi,
         ))
         assert len(cls.fields) > 0, f"empty class {cls.name}" # body below is wrong otherwise
-        members.append(DartExpr.fac('arrow',
+        members.append(DartExpr.x_arrow(
             sig=DartExpr.fac2('decorate', 'override', 'int get hashCode'),
             body=hash_field(cls.fields[0], True) if len(cls.fields) == 1 else DartExpr.fac2('call', 'Object.hash', DartExpr.list(
                 map(hash_field, cls.fields),
