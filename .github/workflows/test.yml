@@ -19,6 +19,7 @@ jobs:
         name: example.dart
         path: lib/example.dart
   dart:
+    needs: python
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -28,6 +29,6 @@ jobs:
     - uses: actions/download-artifact@master
       with:
         name: example.dart
-        path: lib/example.dart
+        path: lib
     - name: test
       run: dart test
