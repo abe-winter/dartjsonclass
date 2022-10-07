@@ -1,0 +1,28 @@
+jobs:
+  python:
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dart-lang/setup-dart@v1.3
+    - name: deps
+      run: pip install -e .[test]
+    - name: test
+      # todo: coverage pls
+      run: pytest
+    - name: render example
+      run: make lib/example.dart
+    - uses: actions/upload-artifact@master
+      with:
+        name: example.dart
+        path: lib/example.dart
+  dart:
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dart-lang/setup-dart@v1.3
+    - name: deps
+      run: dart pub get
+    - uses: actions/download-artifact@master
+      with:
+        name: example.dart
+        path: lib/example.dart
+    - name: test
+      run: dart test
