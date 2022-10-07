@@ -26,7 +26,7 @@ class Expr:
     def __init_subclass__(cls, **kwargs):
         "creates classmethods from TEMPLATES for shortcuts, and in the hope that some code inference tools will find them"
         super.__init_subclass__(**kwargs)
-        # todo: it seems like jedi is trying to get runtime type mutations? debug this
+        # todo: it seems like jedi is trying to get runtime type mutations? debug this. whole point of these helpers is code completion, use decorators instead of TEMPLATES if not possible
         # https://github.com/davidhalter/jedi/issues/1347 dynamic class methods
         # https://github.com/davidhalter/jedi/issues/1458 use annotations
         # https://github.com/davidhalter/jedi/pull/1461 PR to use annotations
