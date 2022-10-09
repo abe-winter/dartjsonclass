@@ -66,7 +66,7 @@ def main():
         shutil.copy(os.path.join(os.path.dirname(__file__), 'jsonbase.dart'), args.output)
         for mod, pairs in by_mod.items():
             # sorting so subsequent runs produce consistent diffs
-            pairs.sort(key=lambda pair: pair[0].__code__.__co_firstlineno__)
+            pairs.sort(key=lambda pair: pair[0].__name__)
             fname = mod_out_path(args.output, mod)
             print('writing', fname)
             with open(fname, 'w') as outfile:
@@ -101,7 +101,8 @@ def write_preamble(outfile, extras=()):
         '// ignore_for_file: non_constant_identifier_names',
         "import 'dart:convert';",
         "import './jsonbase.dart';",
-        *extras,
+        # note: sort extras for consistent diffs
+        *sorted(extras),
     ]
     outfile.write('\n'.join(lines) + '\n\n')
 

@@ -68,8 +68,9 @@ def dart_type(py_type: type, nullable: bool = False) -> DartType:
             # todo: maybe enum here
             return DartType('String' + null_tail, nullable)
         elif py_type.__origin__ is Union:
-            # warning: this won't always be right. also todo, provide a way to parse the union
-            return DartType('Map<String, dynamic>' + null_tail, nullable)
+            # todo: provide a way to parse the union
+            # todo: does dynamic ever need to be nullable?
+            return DartType('dynamic' + null_tail, nullable)
         else:
             raise TypeError('unk collection type', py_type, type(py_type), py_type.__origin__)
     elif isinstance(py_type, type) and issubclass(py_type, pydantic.BaseModel):
