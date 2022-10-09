@@ -76,5 +76,14 @@ void main() {
     commonTests((x) => Msg.fromMap(x), (x) => Msg.fromJson(x), Msg.djc__fields, msg);
   });
 
+  test('unions', () {
+    final msg = UnionTester(Item(1, "one"), [Item(0, "zero"), "string"], {"x": Item(3, "three"), "y": "string"});
+    // note: because of dynamic fields from union, we're not testing for equality -- the Items in unions become toMap.
+    // In this version of djc, we don't know how to rehydrate union types.
+    final rt = UnionTester.fromJson(msg.toJson());
+    expect(rt.list_union.length, 2);
+    expect(rt.map_union.length, 2);
+  });
+
   // todo: in deep copy, make sure collections, collection items, and JsonBase attrs are equal but not same instance
 }

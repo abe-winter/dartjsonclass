@@ -1,6 +1,6 @@
 "example for testing"
 import uuid
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import pydantic
 
 class Item(pydantic.BaseModel):
@@ -21,3 +21,8 @@ class StrList(pydantic.BaseModel):
 
 class NullItem(pydantic.BaseModel):
     item: Optional[Item]
+
+class UnionTester(pydantic.BaseModel):
+    union: Union[Item, str]
+    list_union: List[Union[Item, str]]
+    map_union: Dict[str, Union[Item, str]]

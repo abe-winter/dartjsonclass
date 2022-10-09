@@ -73,9 +73,12 @@ DART_LITERALS = ['String', 'int']
 
 def ffm_collectionify(dart_type: DartType, value: DartExpr):
     "helper for field_from_map, handles nesting"
+    if dart_type.full_type == 'dynamic':
+        # warning: I think 'dynamic?' can happen sometimes, won't be caught here
+        return value
     if not dart_type.template_class:
         base = dart_type.full_type.removesuffix('?')
-        assert base not in DART_LITERALS # shouldn't get here
+        assert base not in DART_LITERALS
         return DartExpr.fac2('call',
             f'{base}.fromMap',
             DartExpr.fac2('list', [value]),

@@ -56,7 +56,8 @@ Also, my message objects are strongly typed in my backend codebase. Maintaining 
 - [ ] tests passing, coverage, CI
 - [ ] format version strings into the generated .dart (including jsonbase) (version of this tool and the source codebase)
 - [ ] support no-json, no-meta, no-dataclass flags (half working but JsonBase needs to be factored to 3 interfaces)
-- [ ] maybe make get/set opt-in per class (it's the largest feature by line count, also probably the least-used)
+- [ ] make get/set opt-in per class (it's the largest feature by line count, also probably the least-used)
+- [ ] rehydrate union types (instead of making them dynamic)
 
 ### nice-to-haves
 
