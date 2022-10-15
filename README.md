@@ -56,7 +56,8 @@ Also, my message objects are strongly typed in my backend codebase. Maintaining 
 - [ ] tests passing, coverage, CI
 - [ ] format version strings into the generated .dart (including jsonbase) (version of this tool and the source codebase)
 - [ ] support no-json, no-meta, no-dataclass flags (half working but JsonBase needs to be factored to 3 interfaces)
-- [ ] make get/set opt-in per class (it's the largest feature by line count, also probably the least-used)
+- [x] make get/set opt-in per class (it's the largest feature by line count, also probably the least-used)
+- [ ] make json + ==/copy/hash opt-in
 - [ ] rehydrate union types (instead of making them dynamic)
 
 ### nice-to-haves
@@ -66,7 +67,7 @@ Also, my message objects are strongly typed in my backend codebase. Maintaining 
 - [ ] walk tree to render DartExprs from root render, don't require pre-rendering them in codegen
 - [ ] register global error handler
 - [ ] ISO datetimes plugin
-- [ ] fromDioResponse factory
+- [ ] some kind of API integration -- maybe specify route path + parameters on the class for types with trivial getters?
 - [ ] generate inheritance that matches pydantic (probably only for base class testing. composition with spread ops is possible but complicated)
 
 ## other useful features

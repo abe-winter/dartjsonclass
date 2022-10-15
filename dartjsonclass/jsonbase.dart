@@ -12,11 +12,14 @@ abstract class JsonBase<T> {
   // static JsonBase fromMap(Map<String, dynamic> map) => throw UnimplementedError("I'm abstract even though that's not allowed");
   // static JsonBase fromJson(String raw) => fromMap(jsonDecode(raw) as Map<String, dynamic>);
 
-  // todo: --no-meta
+  T copy();
+}
+
+/// interface for metaprogramming
+abstract class DjcMetaBase {
+  // static List<String> djc__fields; // sigh
   dynamic getAttr(String name);
   void setAttr(String name, dynamic val);
-
-  T copy();
 }
 
 int hashcodeList(List? list) => list == null ? list.hashCode : Object.hashAll(list);

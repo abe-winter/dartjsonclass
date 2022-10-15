@@ -13,7 +13,7 @@ def main():
     p.add_argument('-o', '--output', default='-', help="destination file (default stdout)")
     p.add_argument('--mods', action='store_true', help="treat '-o' as directory, make submodules that match source layout")
     p.add_argument('--no-ser', action='store_true', help="omit json / map methods")
-    p.add_argument('--no-meta', action='store_true', help="omit fields list + get/set methods")
+    p.add_argument('--with-meta', help="list of class names which get metaprogramming extensions", nargs='+')
     p.add_argument('--no-data', action='store_true', help="omit dataclass methods (copy, equal)")
     p.add_argument('--exclude', help="list of classes to exclude", nargs='+')
     p.add_argument('--include', help="list of classes to include (if none given, include all)", nargs='+')
@@ -48,7 +48,7 @@ def main():
     for cls in by_name.values():
         dart_classes.append(pydantic_to_dart(cls))
     gen_cls = [
-        genclass(cls, meta=not args.no_meta, data=not args.no_data)
+        genclass(cls, meta=cls.name in (args.with_meta or ()), data=not args.no_data)
         for cls in dart_classes
     ]
     if args.mods:

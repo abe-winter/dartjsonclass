@@ -1,5 +1,5 @@
 lib/example.dart: example.py dartjsonclass/*.py
-	python -m dartjsonclass example.py -o $@
+	python -m dartjsonclass example.py -o $@ --with-meta Msg Item StrList
 
 e2e: lib/example.dart
 	dart main.dart

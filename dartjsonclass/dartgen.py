@@ -31,10 +31,10 @@ class DartExpr(Expr):
         # arguments list argument
         'arg': lambda type, name: [type, name],
         'member': lambda type, name, init=None: [type, name, '=' if init else None, init and Expr.maybe_render(init)],
-        'classdec': lambda name, ext=None, imp=None: [
+        'classdec': lambda name, imp=None, ext=None: [
             'class', name,
-            ['implements', Expr.maybe_render(imp)] if imp else None,
             ['extends', Expr.maybe_render(ext)] if ext else None,
+            ['implements', Expr.maybe_render(imp)] if imp else None,
         ],
         'dot': lambda obj, field, elvis=False: [Expr.maybe_render(obj), Nosp, flag('?.', elvis, '.'), Nosp, field],
         'case': lambda cond, stmts, nobreak=False: [
@@ -256,8 +256,8 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         # todo: copyWith
         # todo: whatever makes stable sorting
 
-    return DartExpr.fac('block',
-        sig=DartExpr.fac2('classdec', cls.name, 'JsonBase' if jsonbase else None),
+    return DartExpr.x_block(
+        sig=DartExpr.x_classdec(cls.name, ext='JsonBase' if jsonbase else None, imp='DjcMetaBase' if meta else None),
         children=members,
     )
 
