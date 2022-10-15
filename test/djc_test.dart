@@ -3,13 +3,13 @@ import 'package:djc_example/example.dart';
 import 'package:test/test.dart';
 
 /// convert to map and back to T
-T mapRoundtrip<T extends JsonBase>(fromMap, T t) => fromMap(t.toMap());
+T mapRoundtrip<T extends JsonBaseMeta>(fromMap, T t) => fromMap(t.toMap());
 
 /// convert to json and back to T
-T jsonRoundtrip<T extends JsonBase>(fromJson, T t) => fromJson(t.toJson());
+T jsonRoundtrip<T extends JsonBaseMeta>(fromJson, T t) => fromJson(t.toJson());
 
 /// common tests for simple + complex classes
-void commonTests<T extends JsonBase>(fromMap, fromJson, List<String> fields, T t) {
+void commonTests<T extends JsonBaseMeta>(fromMap, fromJson, List<String> fields, T t) {
   test('roundtrip_equal', () {
     expect(t, mapRoundtrip(fromMap, t));
     expect(t, jsonRoundtrip(fromJson, t));

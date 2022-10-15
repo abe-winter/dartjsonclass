@@ -257,7 +257,7 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         # todo: whatever makes stable sorting
 
     return DartExpr.x_block(
-        sig=DartExpr.x_classdec(cls.name, ext='JsonBase' if jsonbase else None, imp='DjcMetaBase' if meta else None),
+        sig=DartExpr.x_classdec(cls.name, ext=None if not jsonbase else 'JsonBaseMeta' if meta else 'JsonBase'),
         children=members,
     )
 

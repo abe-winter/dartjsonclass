@@ -15,11 +15,22 @@ abstract class JsonBase<T> {
   T copy();
 }
 
-/// interface for metaprogramming
-abstract class DjcMetaBase {
-  // static List<String> djc__fields; // sigh
-  dynamic getAttr(String name);
-  void setAttr(String name, dynamic val);
+/// base class with metaprogramming
+/// ideally this would be a combine-able interface, but multiple inheritance in dart is painful
+abstract class JsonBaseMeta<T> {
+  Map<String, dynamic> toMap();
+
+  String toJson() => jsonEncode(toMap());
+
+  // dart why won't you love me
+  // static JsonBase fromMap(Map<String, dynamic> map) => throw UnimplementedError("I'm abstract even though that's not allowed");
+  // static JsonBase fromJson(String raw) => fromMap(jsonDecode(raw) as Map<String, dynamic>);
+
+  T copy();
+
+  // metaprogramming section
+  dynamic getAttr(String name) => throw UnimplementedError("class generated without metaprogramming");
+  void setAttr(String name, dynamic val) => throw UnimplementedError("class generated without metaprogramming");
 }
 
 int hashcodeList(List? list) => list == null ? list.hashCode : Object.hashAll(list);
