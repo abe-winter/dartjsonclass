@@ -48,27 +48,38 @@ Also, my message objects are strongly typed in my backend codebase. Maintaining 
 - [x] fromMap / toMap, fromJson / toJson
 - [x] basic metaprogramming: fieldNames / getAttr / setAttr
 - [x] operator ==, copy, hash
-  - [ ] operator == for collections (mostly working, needs comprehensive tests)
-- nullable fields
+  - [ ] operator == for collections (mostly working, needs comprehensive combination testing)
   - [x] literals
   - [ ] non-literals (mostly working, needs comprehensive tests)
-- [ ] nested collections like `Map<String, List<Item>>` (may be working, needs tests)
-- [ ] tests passing, coverage, CI
-- [ ] format version strings into the generated .dart (including jsonbase) (version of this tool and the source codebase)
-- [ ] support no-json, no-meta, no-dataclass flags (half working but JsonBase needs to be factored to 3 interfaces)
+  - [ ] factory with named arguments, copyWith
+- [ ] nullable fields (seems to work but needs testing strategy)
+- [ ] nested collections like `Map<String, List<Item>>` (may be working, needs comprehensive combination testing)
+- tests
+  - [x] CI + tests passing
+  - [ ] coverage in py codebase
+- [ ] format version strings into the generated .dart (including jsonbase) (include version of this tool and of the source codebase)
+- [ ] support no-json, no-meta, no-dataclass flags (semi working, dart generics support is an obstacle here, need strategy that doesn't limit consumer code)
 - [x] make get/set opt-in per class (it's the largest feature by line count, also probably the least-used)
-- [ ] make json + ==/copy/hash opt-in
-- [ ] rehydrate union types (instead of making them dynamic)
+- rehydrate union types (instead of making them dynamic)
+  - [ ] based on literal flag
+  - [ ] based on field or dynamic type testing where not ambiguous
+- [ ] way of specifying configs on source classes which DJC can consume
+- [ ] datetime support
 
 ### nice-to-haves
 
 - [ ] global and per-class immutable
-- [ ] factory with named arguments, copyWith
 - [ ] walk tree to render DartExprs from root render, don't require pre-rendering them in codegen
-- [ ] register global error handler
-- [ ] ISO datetimes plugin
-- [ ] some kind of API integration -- maybe specify route path + parameters on the class for types with trivial getters?
-- [ ] generate inheritance that matches pydantic (probably only for base class testing. composition with spread ops is possible but complicated)
+- [ ] better intermediate representation for classes (don't convert directly from pydantic to DartClass)
+- error handling
+  - [ ] global and per-class hooks (e.g. to show a toast)
+  - [ ] distinguish conversion errors from missing field errors
+  - [ ] include context in error (pass down dotted address to nested parse)
+- [ ] include API GET route in generated class, with template string
+  - [ ] also specify query params
+  - [ ] also specify non-GET routes
+- [ ] generate inheritance that matches pydantic (for base testing. may need this for flagged union rehydration)
+  - [ ] delegate some ser/des to base class using spread ops? tricky bc some fields may be overridden
 
 ## other useful features
 
