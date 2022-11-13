@@ -28,6 +28,7 @@ void main() {
     "12345",
     null,
     item,
+    DateTime.parse("2022-01-01 12:00:00+00:00"),
     [Item(2, "two")],
     {"x": Item(3, "three")},
     {"y": Item(4, "four")},

@@ -68,12 +68,22 @@ void main() {
       "12345",
       null,
       item,
+      DateTime.parse("2022-01-01 12:00:00+00:00"),
       [Item(2, "two")],
       {"x": Item(3, "three")},
       {"y": Item(4, "four")},
     );
 
     commonTests((x) => Msg.fromMap(x), (x) => Msg.fromJson(x), Msg.djc__fields, msg);
+
+    test('datetime', () {
+      expect(msg.dt, TypeMatcher<DateTime>());
+      final map = msg.toMap();
+      expect(map['dt'], TypeMatcher<String>());
+      final round = Msg.fromMap(map);
+      expect(round.dt, msg.dt);
+      expect(round.dt, TypeMatcher<DateTime>());
+    });
   });
 
   test('unions', () {

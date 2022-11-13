@@ -17,10 +17,13 @@ def main():
     p.add_argument('--no-data', action='store_true', help="omit dataclass methods (copy, equal)")
     p.add_argument('--exclude', help="list of classes to exclude", nargs='+')
     p.add_argument('--include', help="list of classes to include (if none given, include all)", nargs='+')
+    p.add_argument('--no-datetime', action='store_true', help="don't convert datetimes, treat them as strings instead")
     args = p.parse_args()
 
     if args.no_ser:
         raise NotImplementedError("we don't know how to omit json methods")
+    if args.no_datetime:
+        raise NotImplementedError("no_datetime not supported yet")
 
     classes = {}
     for path in args.paths:

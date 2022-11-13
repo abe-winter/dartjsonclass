@@ -40,8 +40,7 @@ def dart_type(py_type: type, nullable: bool = False) -> DartType:
     elif py_type is bool:
         return DartType('bool' + null_tail, nullable)
     elif py_type is datetime:
-        # todo: actually parse date from ISO
-        return DartType('String' + null_tail, nullable)
+        return DartType('DateTime' + null_tail, nullable)
     elif isinstance(py_type, _GenericAlias):
         if py_type.__origin__ is list:
             assert len(py_type.__args__) == 1

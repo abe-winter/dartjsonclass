@@ -1,5 +1,6 @@
 "example for testing"
 import uuid
+from datetime import datetime
 from typing import List, Dict, Optional, Union
 import pydantic
 
@@ -11,6 +12,7 @@ class Msg(pydantic.BaseModel):
     id: str
     maybe: Optional[int]
     item: Item
+    dt: datetime
     item_list: List[Item]
     item_dict: Dict[str, Item]
     id_dict: Dict[uuid.UUID, Item]
