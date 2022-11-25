@@ -24,7 +24,7 @@ given this input in python:
 class Msg(pydantic.BaseModel):
     id: str
     maybe: Optional[int]
-    item: Item
+    item: Item # Item is defined elsewhere -- check out example.py in this repo for the actual full example
     dt: datetime
     item_list: List[Item]
     item_dict: Dict[str, Item]
