@@ -134,6 +134,8 @@ Also, my message objects are strongly typed in my backend codebase. Maintaining 
 - [x] fromMap / toMap, fromJson / toJson
 - [x] basic metaprogramming: fieldNames / getAttr / setAttr
 - [x] operator ==, copy, hash
+  - [ ] try https://pub.dev/packages/equatable or quiver.collections to replace the bespoke versions in here
+  - [ ] deep copy. detect cases where splat `...` operator won't cut it
   - [ ] operator == for collections (mostly working, needs comprehensive combination testing)
   - [x] literals
   - [ ] non-literals (mostly working, needs comprehensive tests)
