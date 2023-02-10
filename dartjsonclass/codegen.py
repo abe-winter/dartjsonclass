@@ -89,6 +89,7 @@ def ajoin(seq, delim=',', final=None) -> list:
     Some flattening happening?
     Final is the delim for after last elt (like ';'? why?).
     """
+    # todo: try more_itertools.intersperse instead
     ret = []
     if not seq:
         return ret

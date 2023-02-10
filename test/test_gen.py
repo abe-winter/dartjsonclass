@@ -1,6 +1,6 @@
 import pytest
 from dartjsonclass.codegen import ajoin, flatten, Nosp, Endl, Indent, Dedent, format_exprs
-from dartjsonclass.dartgen import DartExpr, field_from_map, genclass
+from dartjsonclass.dartgen import DartExpr, field_from_map, genclass, maybe_mask
 from .test_parser import TEST_CLASS
 
 def test_flatten():
@@ -71,3 +71,8 @@ def test_gen_case():
 @pytest.mark.skip
 def test_nosemi():
     raise NotImplementedError
+
+def test_maybe_mask():
+    assert maybe_mask([], 'name') == 'name'
+    assert maybe_mask(['name'], 'name') == 'this.name'
+    assert maybe_mask(['name'], 'other') == 'other'

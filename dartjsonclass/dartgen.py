@@ -1,6 +1,6 @@
 "dart-specific codegen"
 import contextlib
-from typing import Callable
+from typing import Callable, List
 from .parser import DartClass, DartType, DartField
 from .codegen import Expr, Nosp, Nosemi, flag, ajoin, Indent, Dedent, CodegenError, Endl
 
@@ -226,13 +226,13 @@ def genclass(cls: DartClass, all_type_names = (), jsonbase: bool = True, meta: b
         members.append(getattr_setattr(
             cls,
             DartExpr.fac('sig', name='getAttr', args=DartExpr.list(['String name'])),
-            lambda field: DartExpr.fac2('kw', 'return', field.name),
+            lambda field: DartExpr.fac2('kw', 'return', maybe_mask(['name'], field.name)),
             True,
         ))
         members.append(getattr_setattr(
             cls,
             DartExpr.fac('sig', name='setAttr', ret='void', args=DartExpr.list(['String name', 'dynamic val'])),
-            lambda field: DartExpr.fac2('assign', field.name, 'val'),
+            lambda field: DartExpr.fac2('assign', maybe_mask(['name', 'val'], field.name), 'val'),
             False,
         ))
 
@@ -306,3 +306,7 @@ def getattr_setattr(cls: DartClass, sig: DartExpr, stmt: Callable[[DartField], D
         ],
         nosemi=Nosemi,
     )
+
+def maybe_mask(args: List[str], var: str) -> str:
+    "access members this this.member when member is also a function arg"
+    return f"this.{var}" if var in args else var
