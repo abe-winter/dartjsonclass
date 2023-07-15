@@ -131,11 +131,9 @@ def field_from_map(field: DartField, cls: DartClass) -> DartExpr:
     expr = DartExpr.fac('call', name='raw', args=DartExpr.fac('list', children=[f'"{field.name}"']), scope='[]')
     if dart_type.uses_extension_types() or dart_type.template_class in ('List', 'Map'):
         return arg_null_wrap(dart_type, ffm_collectionify(field.dart_type, expr), expr)
-    elif field.dart_type.full_type in ('DateTime', 'DateTime?'):
-        parse_expr = DartExpr.x_call('DateTime.parse', expr)
-        if field.dart_type.nullable:
-            raise NotImplementedError('null wrapper for DateTime')
-        return parse_expr
+    elif dart_type.full_type in ('DateTime', 'DateTime?'):
+        # todo: test coverage for this case pls
+        return arg_null_wrap(dart_type, DartExpr.x_call('DateTime.parse', expr), expr)
     else:
         return expr if dart_type.nullable else expr.bang()
 
@@ -309,4 +307,5 @@ def getattr_setattr(cls: DartClass, sig: DartExpr, stmt: Callable[[DartField], D
 
 def maybe_mask(args: List[str], var: str) -> str:
     "access members this this.member when member is also a function arg"
+    # todo: this needs to be automatic. codegen system needs to understand what's in scope. (this also allows minimal linting)
     return f"this.{var}" if var in args else var

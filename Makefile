@@ -8,4 +8,4 @@ dart-suite: lib/example.dart
 	dart test
 
 clean:
-	rm -r .dart_tool/ .packages pubspec.lock
+	rm -rf .dart_tool/ .packages pubspec.lock
